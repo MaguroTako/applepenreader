@@ -13,7 +13,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Extracts positioned text fragments whose center point is inside the outline or whose rectangle overlaps the outline.
 - Shows the text detected on the visible PDF page below the extraction result.
 - Shows an optional debug overlay for text fragment rectangles and center points.
-- Groups extracted fragments with nearby Y coordinates into rows, then joins each row in X order.
+- Groups extracted fragments into rows using PDF.js line-end information and nearby Y coordinates, then joins each row in X order.
 
 ## Requirements
 
@@ -39,6 +39,6 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, shows the visible page text detected by PDF.js below the extraction result, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js below the extraction result, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
 This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding multi-page navigation, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
