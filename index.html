@@ -206,7 +206,12 @@
     let outlineBeforeDrawing = [];
     let activePointers = new Map();
     let drawingPointerId = null;
+    let pendingTouchPointerId = null;
+    let pendingTouchStartPoint = null;
     let isDrawing = false;
+    let isGestureInProgress = false;
+
+    const touchDrawStartDistance = 8;
 
     pdfInput.addEventListener('change', async (event) => {
       const [file] = event.target.files;
@@ -239,23 +244,32 @@
 
       activePointers.set(event.pointerId, event.pointerType);
       if (activePointers.size > 1) {
-        cancelDrawingForGesture(event);
+        cancelDrawingForGesture();
+        isGestureInProgress = true;
         return;
       }
 
-      isDrawing = true;
-      drawingPointerId = event.pointerId;
-      outlineBeforeDrawing = [...outlinePoints];
-      outlinePoints = [eventPoint(event)];
-      drawCanvas.setPointerCapture(event.pointerId);
-      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      drawContext.beginPath();
-      drawContext.moveTo(outlinePoints[0].x, outlinePoints[0].y);
+      if (isGestureInProgress) return;
+
+      if (event.pointerType === 'touch') {
+        pendingTouchPointerId = event.pointerId;
+        pendingTouchStartPoint = eventPoint(event);
+        return;
+      }
+
+      startDrawing(event.pointerId, eventPoint(event));
     });
 
     drawCanvas.addEventListener('pointermove', (event) => {
-      if (!isDrawing || event.pointerId !== drawingPointerId || activePointers.size > 1) return;
+      if (activePointers.size > 1 || isGestureInProgress) return;
+
       const point = eventPoint(event);
+      if (event.pointerId === pendingTouchPointerId && !isDrawing) {
+        if (distanceBetween(point, pendingTouchStartPoint) < touchDrawStartDistance) return;
+        startDrawing(event.pointerId, pendingTouchStartPoint);
+      }
+
+      if (!isDrawing || event.pointerId !== drawingPointerId) return;
       outlinePoints.push(point);
       drawContext.lineTo(point.x, point.y);
       drawContext.stroke();
@@ -316,8 +330,29 @@
       };
     }
 
+    function startDrawing(pointerId, point) {
+      isDrawing = true;
+      drawingPointerId = pointerId;
+      pendingTouchPointerId = null;
+      pendingTouchStartPoint = null;
+      outlineBeforeDrawing = [...outlinePoints];
+      outlinePoints = [point];
+      drawCanvas.setPointerCapture(pointerId);
+      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawContext.beginPath();
+      drawContext.moveTo(point.x, point.y);
+    }
+
     function finishDrawing(event) {
       activePointers.delete(event.pointerId);
+      if (activePointers.size === 0) isGestureInProgress = false;
+
+      if (event.pointerId === pendingTouchPointerId) {
+        pendingTouchPointerId = null;
+        pendingTouchStartPoint = null;
+        return;
+      }
+
       if (!isDrawing || event.pointerId !== drawingPointerId) return;
 
       isDrawing = false;
@@ -331,10 +366,12 @@
       }
     }
 
-    function cancelDrawingForGesture(event) {
+    function cancelDrawingForGesture() {
+      const capturedPointerId = drawingPointerId;
+      pendingTouchPointerId = null;
+      pendingTouchStartPoint = null;
       if (!isDrawing) return;
 
-      const capturedPointerId = drawingPointerId;
       isDrawing = false;
       drawingPointerId = null;
       outlinePoints = [...outlineBeforeDrawing];
@@ -342,6 +379,10 @@
         drawCanvas.releasePointerCapture(capturedPointerId);
       }
       redrawOutline();
+    }
+
+    function distanceBetween(pointA, pointB) {
+      return Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
     }
 
     function redrawOutline() {
@@ -362,7 +403,10 @@
       outlineBeforeDrawing = [];
       activePointers.clear();
       drawingPointerId = null;
+      pendingTouchPointerId = null;
+      pendingTouchStartPoint = null;
       isDrawing = false;
+      isGestureInProgress = false;
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       result.value = 'まだ抽出されていません。';
       result.textContent = result.value;
