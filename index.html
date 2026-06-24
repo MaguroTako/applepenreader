@@ -94,7 +94,7 @@
       position: relative;
       width: fit-content;
       margin: 0 auto;
-      touch-action: none;
+      touch-action: pinch-zoom;
     }
 
     canvas {
@@ -203,6 +203,9 @@
     let currentViewport = null;
     let textItems = [];
     let outlinePoints = [];
+    let outlineBeforeDrawing = [];
+    let activePointers = new Map();
+    let drawingPointerId = null;
     let isDrawing = false;
 
     pdfInput.addEventListener('change', async (event) => {
@@ -233,7 +236,16 @@
 
     drawCanvas.addEventListener('pointerdown', (event) => {
       if (!currentPage) return;
+
+      activePointers.set(event.pointerId, event.pointerType);
+      if (activePointers.size > 1) {
+        cancelDrawingForGesture(event);
+        return;
+      }
+
       isDrawing = true;
+      drawingPointerId = event.pointerId;
+      outlineBeforeDrawing = [...outlinePoints];
       outlinePoints = [eventPoint(event)];
       drawCanvas.setPointerCapture(event.pointerId);
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
@@ -242,7 +254,7 @@
     });
 
     drawCanvas.addEventListener('pointermove', (event) => {
-      if (!isDrawing) return;
+      if (!isDrawing || event.pointerId !== drawingPointerId || activePointers.size > 1) return;
       const point = eventPoint(event);
       outlinePoints.push(point);
       drawContext.lineTo(point.x, point.y);
@@ -251,6 +263,9 @@
 
     drawCanvas.addEventListener('pointerup', finishDrawing);
     drawCanvas.addEventListener('pointercancel', finishDrawing);
+    drawCanvas.addEventListener('pointerleave', (event) => {
+      if (event.pointerId === drawingPointerId && event.buttons === 0) finishDrawing(event);
+    });
 
     function bestScaleForScreen(page) {
       const unscaled = page.getViewport({ scale: 1 });
@@ -302,17 +317,52 @@
     }
 
     function finishDrawing(event) {
-      if (!isDrawing) return;
+      activePointers.delete(event.pointerId);
+      if (!isDrawing || event.pointerId !== drawingPointerId) return;
+
       isDrawing = false;
-      drawCanvas.releasePointerCapture(event.pointerId);
+      drawingPointerId = null;
+      if (drawCanvas.hasPointerCapture(event.pointerId)) {
+        drawCanvas.releasePointerCapture(event.pointerId);
+      }
       if (outlinePoints.length > 2) {
         drawContext.closePath();
         drawContext.stroke();
       }
     }
 
+    function cancelDrawingForGesture(event) {
+      if (!isDrawing) return;
+
+      const capturedPointerId = drawingPointerId;
+      isDrawing = false;
+      drawingPointerId = null;
+      outlinePoints = [...outlineBeforeDrawing];
+      if (capturedPointerId !== null && drawCanvas.hasPointerCapture(capturedPointerId)) {
+        drawCanvas.releasePointerCapture(capturedPointerId);
+      }
+      redrawOutline();
+    }
+
+    function redrawOutline() {
+      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      if (outlinePoints.length === 0) return;
+
+      drawContext.beginPath();
+      drawContext.moveTo(outlinePoints[0].x, outlinePoints[0].y);
+      outlinePoints.slice(1).forEach((point) => {
+        drawContext.lineTo(point.x, point.y);
+      });
+      if (outlinePoints.length > 2) drawContext.closePath();
+      drawContext.stroke();
+    }
+
     function clearDrawing() {
       outlinePoints = [];
+      outlineBeforeDrawing = [];
+      activePointers.clear();
+      drawingPointerId = null;
+      isDrawing = false;
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       result.value = 'まだ抽出されていません。';
       result.textContent = result.value;

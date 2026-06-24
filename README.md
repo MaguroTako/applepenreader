@@ -8,6 +8,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Renders the first page with PDF.js.
 - Places a transparent drawing canvas above the PDF page.
 - Lets the user draw a closed outline around text.
+- Allows browser pinch zoom on the drawing area without creating unwanted lines.
 - Extracts text items whose center points are contained by the outline.
 
 ## Requirements
@@ -26,12 +27,12 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 2. Open `http://localhost:8000/` in a browser.
 3. Tap **ファイルを選択** and choose a PDF.
-4. Draw a balloon around text with Apple Pencil, touch, or mouse.
+4. Draw a balloon around text with Apple Pencil, touch, or mouse. Pinch with two fingers to zoom the page; pinch gestures do not create drawing lines.
 5. Tap **囲み文字を抽出**.
 6. Tap **線を消す** to reset the outline and result.
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, and checks each PDF text item's rendered center point with a point-in-polygon test.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, ignores multi-pointer pinch gestures so they can zoom without drawing, and checks each PDF text item's rendered center point with a point-in-polygon test.
 
 This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding multi-page navigation, improving text hit testing for partially overlapped words, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
