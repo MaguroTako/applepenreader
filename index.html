@@ -170,7 +170,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V001</span>
+      <span class="version-badge" aria-label="バージョン">V002</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -197,7 +197,7 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">現在は表示中の1ページから、囲み線の内側に中心点が入った文字を抽出します。</p>
+        <p class="hint">PDF読込時に先に保存した文字情報から、囲み線の内側に中心点が入った文字を検索します。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
     </aside>
@@ -219,9 +219,10 @@
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
 
+    let pdfDocument = null;
     let currentPage = null;
     let currentViewport = null;
-    let textItems = [];
+    let cachedPages = [];
     let outlinePoints = [];
     let outlineBeforeDrawing = [];
     let activePointers = new Map();
@@ -238,11 +239,15 @@
       if (!file) return;
 
       const data = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data }).promise;
-      currentPage = await pdf.getPage(1);
+      result.value = 'PDF全体のテキストを先に抽出しています。';
+      result.textContent = result.value;
+
+      pdfDocument = await pdfjsLib.getDocument({ data }).promise;
+      cachedPages = await cacheAllTextItems(pdfDocument);
+
+      currentPage = await pdfDocument.getPage(1);
       currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
       await renderPage();
-      await cacheTextItems();
       clearDrawing();
       placeholder.hidden = true;
       stage.hidden = false;
@@ -324,20 +329,42 @@
       await currentPage.render({ canvasContext: pdfContext, viewport: currentViewport }).promise;
     }
 
-    async function cacheTextItems() {
-      const textContent = await currentPage.getTextContent();
-      textItems = textContent.items.map((item) => {
-        const transform = pdfjsLib.Util.transform(currentViewport.transform, item.transform);
+    async function cacheAllTextItems(pdf) {
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        pages.push({
+          pageNumber,
+          items: textContent.items
+            .filter((item) => item.str.trim().length > 0)
+            .map((item) => ({
+              text: item.str,
+              transform: item.transform,
+              width: item.width,
+              height: item.height,
+            })),
+        });
+      }
+      return pages;
+    }
+
+    function textItemsForViewport(pageNumber, viewport) {
+      const cachedPage = cachedPages.find((page) => page.pageNumber === pageNumber);
+      if (!cachedPage) return [];
+
+      return cachedPage.items.map((item) => {
+        const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
         const x = transform[4];
         const y = transform[5];
         return {
-          text: item.str,
+          text: item.text,
           center: {
-            x: x + item.width * currentViewport.scale / 2,
-            y: y - item.height * currentViewport.scale / 2,
+            x: x + item.width * viewport.scale / 2,
+            y: y - item.height * viewport.scale / 2,
           },
         };
-      }).filter((item) => item.text.trim().length > 0);
+      });
     }
 
     function eventPoint(event) {
@@ -434,7 +461,7 @@
 
     function extractTextInsideOutline() {
       if (outlinePoints.length < 3) return '';
-      return textItems
+      return textItemsForViewport(currentPage.pageNumber, currentViewport)
         .filter((item) => isPointInsidePolygon(item.center, outlinePoints))
         .map((item) => item.text)
         .join(' ')
