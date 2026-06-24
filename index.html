@@ -396,18 +396,22 @@
       for (let index = textStart; index < textEnd; index += 1) {
         if (/\s/.test(text[index])) {
           if (wordStart !== -1) {
-            fragments.push(textRangeFragment(text, wordStart, index, fullRect, charWidth));
+            fragments.push(textRangeFragment(text, wordStart, index, fullRect, charWidth, false));
             wordStart = -1;
           }
           continue;
         }
         if (wordStart === -1) wordStart = index;
       }
-      if (wordStart !== -1) fragments.push(textRangeFragment(text, wordStart, textEnd, fullRect, charWidth));
+      if (wordStart !== -1) {
+        fragments.push(textRangeFragment(text, wordStart, textEnd, fullRect, charWidth, !!item.hasEOL));
+      } else if (fragments.length > 0 && item.hasEOL) {
+        fragments[fragments.length - 1].endsLine = true;
+      }
       return fragments;
     }
 
-    function textRangeFragment(text, start, end, fullRect, charWidth) {
+    function textRangeFragment(text, start, end, fullRect, charWidth, endsLine = false) {
       const fragmentText = text.slice(start, end);
       const rect = {
         x1: fullRect.x1 + start * charWidth,
@@ -419,6 +423,7 @@
         text: fragmentText,
         rect,
         center: rectCenter(rect),
+        endsLine,
       };
     }
 
@@ -443,6 +448,7 @@
           text: item.text,
           rect,
           center: rectCenter(rect),
+          endsLine: item.endsLine,
         };
       });
     }
@@ -582,21 +588,43 @@
       const averageHeight = items.reduce((sum, item) => sum + (item.rect.y2 - item.rect.y1), 0) / items.length;
       const rowTolerance = Math.max(4, averageHeight * 0.65);
       const rows = [];
+      let currentRow = [];
+      let currentRowY = null;
+
+      const flushRow = () => {
+        if (currentRow.length === 0) return;
+        rows.push({
+          y: currentRowY,
+          items: currentRow,
+        });
+        currentRow = [];
+        currentRowY = null;
+      };
 
       [...items]
         .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
         .forEach((item) => {
-          let row = rows.find((candidate) => Math.abs(candidate.y - item.center.y) <= rowTolerance);
-          if (!row) {
-            row = { y: item.center.y, items: [] };
-            rows.push(row);
+          const shouldStartNewRow = currentRow.length > 0
+            && currentRowY !== null
+            && Math.abs(currentRowY - item.center.y) > rowTolerance;
+
+          if (shouldStartNewRow) {
+            flushRow();
           }
-          row.items.push(item);
-          row.y = row.items.reduce((sum, rowItem) => sum + rowItem.center.y, 0) / row.items.length;
+
+          currentRow.push(item);
+          currentRowY = currentRowY === null
+            ? item.center.y
+            : (currentRowY * (currentRow.length - 1) + item.center.y) / currentRow.length;
+
+          if (item.endsLine) {
+            flushRow();
+          }
         });
 
+      flushRow();
+
       return rows
-        .sort((a, b) => a.y - b.y)
         .map((row) => row.items
           .sort((a, b) => a.rect.x1 - b.rect.x1)
           .map((item) => item.text)
