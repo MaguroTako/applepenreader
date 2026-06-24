@@ -34,6 +34,23 @@
       margin: 0;
     }
 
+    .app-title {
+      display: flex;
+      flex-direction: column;
+      gap: .25rem;
+    }
+
+    .version-badge {
+      align-self: flex-start;
+      border-radius: 999px;
+      background: #e7eefb;
+      color: #0b3c7d;
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: .2rem .55rem;
+    }
+
     main {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
@@ -152,7 +169,10 @@
 </head>
 <body>
   <header>
-    <h1>Apple Pen Reader</h1>
+    <div class="app-title">
+      <span class="version-badge" aria-label="バージョン">V001</span>
+      <h1>Apple Pen Reader</h1>
+    </div>
     <div class="toolbar-row">
       <input id="pdfInput" type="file" accept="application/pdf">
       <button id="extractButton" disabled>囲み文字を抽出</button>
