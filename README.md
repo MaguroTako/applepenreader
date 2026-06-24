@@ -5,6 +5,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## What it does
 
 - Opens a local PDF from a browser file input.
+- Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the first page with PDF.js.
 - Places a transparent drawing canvas above the PDF page.
 - Lets the user draw a closed outline around text.
@@ -33,6 +34,6 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, and checks each PDF text item's rendered center point with a point-in-polygon test.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text items for the visible page into rendered coordinates, and checks each center point with a point-in-polygon test.
 
 This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding multi-page navigation, improving text hit testing for partially overlapped words, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
