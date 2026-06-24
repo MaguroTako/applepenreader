@@ -145,13 +145,22 @@
       align-self: start;
     }
 
-    #result {
-      min-height: 12rem;
+    #result,
+    #detectedText {
       white-space: pre-wrap;
       line-height: 1.65;
       border-radius: .75rem;
       background: #f5f7fb;
       padding: 1rem;
+    }
+
+    #result {
+      min-height: 12rem;
+    }
+
+    #detectedText {
+      max-height: 16rem;
+      overflow: auto;
     }
 
     .hint {
@@ -175,7 +184,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V003</span>
+      <span class="version-badge" aria-label="バージョン">V004</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -207,6 +216,11 @@
         <p class="hint">PDF読込時に先に保存した文字情報から、囲み線と重なった文字矩形を検索し、近いY座標を同じ行としてX順に結合します。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
+      <div>
+        <h2>検出したテキスト</h2>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、行ごとに確認できます。</p>
+      </div>
+      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
     </aside>
   </main>
 
@@ -225,6 +239,7 @@
     const drawCanvas = document.querySelector('#drawCanvas');
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
+    const detectedText = document.querySelector('#detectedText');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -252,6 +267,7 @@
       const data = await file.arrayBuffer();
       result.value = 'PDF全体のテキストを先に抽出しています。';
       result.textContent = result.value;
+      setDetectedText('PDF全体のテキストを先に抽出しています。');
 
       pdfDocument = await pdfjsLib.getDocument({ data }).promise;
       cachedPages = await cacheAllTextItems(pdfDocument);
@@ -267,6 +283,7 @@
       debugButton.disabled = false;
       result.value = 'まだ抽出されていません。';
       result.textContent = result.value;
+      updateDetectedText();
     });
 
     clearButton.addEventListener('click', clearDrawing);
@@ -536,6 +553,21 @@
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       result.value = 'まだ抽出されていません。';
       result.textContent = result.value;
+    }
+
+    function updateDetectedText() {
+      if (!currentPage || !currentViewport) {
+        setDetectedText('PDFを読み込むと検出テキストを表示します。');
+        return;
+      }
+
+      const detected = joinItemsByRows(textItemsForViewport(currentPage.pageNumber, currentViewport));
+      setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
+    }
+
+    function setDetectedText(text) {
+      detectedText.value = text;
+      detectedText.textContent = detectedText.value;
     }
 
     function extractTextInsideOutline() {
