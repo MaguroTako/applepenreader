@@ -10,7 +10,9 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Places a transparent drawing canvas above the PDF page.
 - Lets the user draw a closed outline around text.
 - Allows browser pinch zoom on the drawing area without creating unwanted lines.
-- Extracts text items whose center points are contained by the outline.
+- Extracts positioned text fragments whose center point is inside the outline or whose rectangle overlaps the outline.
+- Shows an optional debug overlay for text fragment rectangles and center points.
+- Groups extracted fragments with nearby Y coordinates into rows, then joins each row in X order.
 
 ## Requirements
 
@@ -29,11 +31,12 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 2. Open `http://localhost:8000/` in a browser.
 3. Tap **ファイルを選択** and choose a PDF.
 4. Draw a balloon around text with Apple Pencil, touch, or mouse. Pinch with two fingers to zoom the page; pinch gestures do not create drawing lines.
-5. Tap **囲み文字を抽出**.
-6. Tap **線を消す** to reset the outline and result.
+5. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
+6. Tap **囲み文字を抽出**.
+7. Tap **線を消す** to reset the outline and result.
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text items for the visible page into rendered coordinates, and checks each center point with a point-in-polygon test.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
-This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding multi-page navigation, improving text hit testing for partially overlapped words, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
+This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding multi-page navigation, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.

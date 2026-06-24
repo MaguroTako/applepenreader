@@ -120,9 +120,14 @@
       height: auto;
     }
 
+    #debugCanvas,
     #drawCanvas {
       inset: 0;
       position: absolute;
+    }
+
+    #debugCanvas {
+      pointer-events: none;
     }
 
     .placeholder {
@@ -170,13 +175,14 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V002</span>
+      <span class="version-badge" aria-label="バージョン">V003</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
       <input id="pdfInput" type="file" accept="application/pdf">
       <button id="extractButton" disabled>囲み文字を抽出</button>
       <button id="clearButton" class="secondary" disabled>線を消す</button>
+      <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
     </div>
   </header>
 
@@ -190,6 +196,7 @@
       </div>
       <div id="stage" class="page-stage" hidden>
         <canvas id="pdfCanvas"></canvas>
+        <canvas id="debugCanvas"></canvas>
         <canvas id="drawCanvas"></canvas>
       </div>
     </section>
@@ -197,7 +204,7 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存した文字情報から、囲み線の内側に中心点が入った文字を検索します。</p>
+        <p class="hint">PDF読込時に先に保存した文字情報から、囲み線と重なった文字矩形を検索し、近いY座標を同じ行としてX順に結合します。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
     </aside>
@@ -211,18 +218,22 @@
     const pdfInput = document.querySelector('#pdfInput');
     const extractButton = document.querySelector('#extractButton');
     const clearButton = document.querySelector('#clearButton');
+    const debugButton = document.querySelector('#debugButton');
     const placeholder = document.querySelector('#placeholder');
     const stage = document.querySelector('#stage');
     const pdfCanvas = document.querySelector('#pdfCanvas');
     const drawCanvas = document.querySelector('#drawCanvas');
+    const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
+    const debugContext = debugCanvas.getContext('2d');
 
     let pdfDocument = null;
     let currentPage = null;
     let currentViewport = null;
     let cachedPages = [];
+    let isDebugVisible = false;
     let outlinePoints = [];
     let outlineBeforeDrawing = [];
     let activePointers = new Map();
@@ -253,11 +264,18 @@
       stage.hidden = false;
       extractButton.disabled = false;
       clearButton.disabled = false;
+      debugButton.disabled = false;
       result.value = 'まだ抽出されていません。';
       result.textContent = result.value;
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    debugButton.addEventListener('click', () => {
+      isDebugVisible = !isDebugVisible;
+      debugButton.setAttribute('aria-pressed', String(isDebugVisible));
+      debugButton.textContent = isDebugVisible ? '文字位置を隠す' : '文字位置を表示';
+      redrawDebugOverlay();
+    });
     extractButton.addEventListener('click', () => {
       const extracted = extractTextInsideOutline();
       result.value = extracted || '囲み内のテキストを抽出できませんでした。';
@@ -314,7 +332,7 @@
 
     async function renderPage() {
       const { width, height } = currentViewport;
-      [pdfCanvas, drawCanvas].forEach((canvas) => {
+      [pdfCanvas, debugCanvas, drawCanvas].forEach((canvas) => {
         canvas.width = width;
         canvas.height = height;
         canvas.style.width = `${width}px`;
@@ -327,26 +345,75 @@
       drawContext.lineJoin = 'round';
 
       await currentPage.render({ canvasContext: pdfContext, viewport: currentViewport }).promise;
+      redrawDebugOverlay();
     }
 
     async function cacheAllTextItems(pdf) {
       const pages = [];
       for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
         const page = await pdf.getPage(pageNumber);
+        const baseViewport = page.getViewport({ scale: 1 });
         const textContent = await page.getTextContent();
         pages.push({
           pageNumber,
           items: textContent.items
             .filter((item) => item.str.trim().length > 0)
-            .map((item) => ({
-              text: item.str,
-              transform: item.transform,
-              width: item.width,
-              height: item.height,
-            })),
+            .flatMap((item) => textItemToPositionedFragments(item, baseViewport)),
         });
       }
       return pages;
+    }
+
+    function textItemToPositionedFragments(item, viewport) {
+      const text = item.str;
+      const fullRect = textItemRect(item, viewport);
+      const trimmedText = text.trim();
+      if (!trimmedText) return [];
+
+      const textStart = text.indexOf(trimmedText[0]);
+      const textEnd = textStart + trimmedText.length;
+      const charWidth = fullRect.width / Math.max(text.length, 1);
+      const fragments = [];
+      let wordStart = -1;
+
+      for (let index = textStart; index < textEnd; index += 1) {
+        if (/\s/.test(text[index])) {
+          if (wordStart !== -1) {
+            fragments.push(textRangeFragment(text, wordStart, index, fullRect, charWidth));
+            wordStart = -1;
+          }
+          continue;
+        }
+        if (wordStart === -1) wordStart = index;
+      }
+      if (wordStart !== -1) fragments.push(textRangeFragment(text, wordStart, textEnd, fullRect, charWidth));
+      return fragments;
+    }
+
+    function textRangeFragment(text, start, end, fullRect, charWidth) {
+      const fragmentText = text.slice(start, end);
+      const rect = {
+        x1: fullRect.x1 + start * charWidth,
+        y1: fullRect.y1,
+        x2: fullRect.x1 + end * charWidth,
+        y2: fullRect.y2,
+      };
+      return {
+        text: fragmentText,
+        rect,
+        center: rectCenter(rect),
+      };
+    }
+
+    function textItemRect(item, viewport) {
+      const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const height = item.height || Math.hypot(transform[2], transform[3]);
+      const rawBox = pdfjsLib.Util.getAxialAlignedBoundingBox([0, 0, item.width, height], transform);
+      const x1 = Math.min(rawBox[0], rawBox[2]);
+      const y1 = Math.min(rawBox[1], rawBox[3]);
+      const x2 = Math.max(rawBox[0], rawBox[2]);
+      const y2 = Math.max(rawBox[1], rawBox[3]);
+      return { x1, y1, x2, y2, width: x2 - x1, height: y2 - y1 };
     }
 
     function textItemsForViewport(pageNumber, viewport) {
@@ -354,17 +421,29 @@
       if (!cachedPage) return [];
 
       return cachedPage.items.map((item) => {
-        const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
-        const x = transform[4];
-        const y = transform[5];
+        const rect = scaleRect(item.rect, viewport.scale);
         return {
           text: item.text,
-          center: {
-            x: x + item.width * viewport.scale / 2,
-            y: y - item.height * viewport.scale / 2,
-          },
+          rect,
+          center: rectCenter(rect),
         };
       });
+    }
+
+    function scaleRect(rect, scale) {
+      return {
+        x1: rect.x1 * scale,
+        y1: rect.y1 * scale,
+        x2: rect.x2 * scale,
+        y2: rect.y2 * scale,
+      };
+    }
+
+    function rectCenter(rect) {
+      return {
+        x: (rect.x1 + rect.x2) / 2,
+        y: (rect.y1 + rect.y2) / 2,
+      };
     }
 
     function eventPoint(event) {
@@ -461,12 +540,105 @@
 
     function extractTextInsideOutline() {
       if (outlinePoints.length < 3) return '';
-      return textItemsForViewport(currentPage.pageNumber, currentViewport)
-        .filter((item) => isPointInsidePolygon(item.center, outlinePoints))
-        .map((item) => item.text)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const matchedItems = textItemsForViewport(currentPage.pageNumber, currentViewport)
+        .filter((item) => doesPolygonTouchRect(outlinePoints, item.rect));
+      return joinItemsByRows(matchedItems);
+    }
+
+    function joinItemsByRows(items) {
+      if (items.length === 0) return '';
+      const averageHeight = items.reduce((sum, item) => sum + (item.rect.y2 - item.rect.y1), 0) / items.length;
+      const rowTolerance = Math.max(4, averageHeight * 0.65);
+      const rows = [];
+
+      [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .forEach((item) => {
+          let row = rows.find((candidate) => Math.abs(candidate.y - item.center.y) <= rowTolerance);
+          if (!row) {
+            row = { y: item.center.y, items: [] };
+            rows.push(row);
+          }
+          row.items.push(item);
+          row.y = row.items.reduce((sum, rowItem) => sum + rowItem.center.y, 0) / row.items.length;
+        });
+
+      return rows
+        .sort((a, b) => a.y - b.y)
+        .map((row) => row.items
+          .sort((a, b) => a.rect.x1 - b.rect.x1)
+          .map((item) => item.text)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function redrawDebugOverlay() {
+      debugContext.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+      if (!isDebugVisible || !currentPage || !currentViewport) return;
+
+      const items = textItemsForViewport(currentPage.pageNumber, currentViewport);
+      debugContext.save();
+      debugContext.lineWidth = 1;
+      debugContext.strokeStyle = 'rgb(255 112 67 / 75%)';
+      debugContext.fillStyle = 'rgb(0 137 123 / 85%)';
+      items.forEach((item) => {
+        const { rect, center } = item;
+        debugContext.strokeRect(rect.x1, rect.y1, rect.x2 - rect.x1, rect.y2 - rect.y1);
+        debugContext.beginPath();
+        debugContext.arc(center.x, center.y, 2.5, 0, Math.PI * 2);
+        debugContext.fill();
+      });
+      debugContext.restore();
+    }
+
+    function doesPolygonTouchRect(polygon, rect) {
+      const corners = rectCorners(rect);
+      return corners.some((point) => isPointInsidePolygon(point, polygon))
+        || isPointInsidePolygon(rectCenter(rect), polygon)
+        || polygon.some((point) => isPointInsideRect(point, rect))
+        || polygonEdges(polygon).some(([start, end]) => rectEdges(rect).some(([rectStart, rectEnd]) => (
+          doSegmentsIntersect(start, end, rectStart, rectEnd)
+        )));
+    }
+
+    function rectCorners(rect) {
+      return [
+        { x: rect.x1, y: rect.y1 },
+        { x: rect.x2, y: rect.y1 },
+        { x: rect.x2, y: rect.y2 },
+        { x: rect.x1, y: rect.y2 },
+      ];
+    }
+
+    function rectEdges(rect) {
+      const [topLeft, topRight, bottomRight, bottomLeft] = rectCorners(rect);
+      return [[topLeft, topRight], [topRight, bottomRight], [bottomRight, bottomLeft], [bottomLeft, topLeft]];
+    }
+
+    function polygonEdges(polygon) {
+      return polygon.map((point, index) => [point, polygon[(index + 1) % polygon.length]]);
+    }
+
+    function isPointInsideRect(point, rect) {
+      return point.x >= rect.x1 && point.x <= rect.x2 && point.y >= rect.y1 && point.y <= rect.y2;
+    }
+
+    function doSegmentsIntersect(a, b, c, d) {
+      const direction = (p, q, r) => ((q.x - p.x) * (r.y - p.y)) - ((q.y - p.y) * (r.x - p.x));
+      const onSegment = (p, q, r) => Math.min(p.x, r.x) <= q.x && q.x <= Math.max(p.x, r.x)
+        && Math.min(p.y, r.y) <= q.y && q.y <= Math.max(p.y, r.y);
+      const d1 = direction(a, b, c);
+      const d2 = direction(a, b, d);
+      const d3 = direction(c, d, a);
+      const d4 = direction(c, d, b);
+      if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) return true;
+      return (d1 === 0 && onSegment(a, c, b))
+        || (d2 === 0 && onSegment(a, d, b))
+        || (d3 === 0 && onSegment(c, a, d))
+        || (d4 === 0 && onSegment(c, b, d));
     }
 
     function isPointInsidePolygon(point, polygon) {
