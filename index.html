@@ -184,7 +184,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V004</span>
+      <span class="version-badge" aria-label="バージョン">V005</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -429,12 +429,29 @@
 
     function textItemRect(item, viewport) {
       const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
-      const height = item.height || Math.hypot(transform[2], transform[3]);
-      const rawBox = pdfjsLib.Util.getAxialAlignedBoundingBox([0, 0, item.width, height], transform);
-      const x1 = Math.min(rawBox[0], rawBox[2]);
-      const y1 = Math.min(rawBox[1], rawBox[3]);
-      const x2 = Math.max(rawBox[0], rawBox[2]);
-      const y2 = Math.max(rawBox[1], rawBox[3]);
+      const directionLength = Math.hypot(transform[0], transform[1]);
+      const advanceScale = directionLength > 0
+        ? (item.width * viewport.scale) / directionLength
+        : 0;
+      const advance = {
+        x: transform[0] * advanceScale,
+        y: transform[1] * advanceScale,
+      };
+      const height = {
+        x: transform[2],
+        y: transform[3],
+      };
+      const origin = { x: transform[4], y: transform[5] };
+      const corners = [
+        origin,
+        { x: origin.x + advance.x, y: origin.y + advance.y },
+        { x: origin.x + height.x, y: origin.y + height.y },
+        { x: origin.x + advance.x + height.x, y: origin.y + advance.y + height.y },
+      ];
+      const x1 = Math.min(...corners.map((point) => point.x));
+      const y1 = Math.min(...corners.map((point) => point.y));
+      const x2 = Math.max(...corners.map((point) => point.x));
+      const y2 = Math.max(...corners.map((point) => point.y));
       return { x1, y1, x2, y2, width: x2 - x1, height: y2 - y1 };
     }
 
