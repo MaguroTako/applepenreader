@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V011</span>
+      <span class="version-badge" aria-label="バージョン">V012</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -242,7 +242,7 @@
       <output id="result">まだ抽出されていません。</output>
       <div>
         <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、1項目ずつ縦一列で確認できます。各テキストの横に中心座標X/Yも表示します。</p>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、1項目ずつ縦一列で確認できます。各テキストの横に、小数点を切り捨てた配置ポイントX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
     </aside>
@@ -637,7 +637,7 @@
         return;
       }
 
-      const detected = joinItemsAsColumn(textItemsForViewport(currentPage.pageNumber, currentViewport));
+      const detected = joinItemsAsColumn(uniqueTextItemsForViewport(currentPage.pageNumber, currentViewport));
       setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
     }
 
@@ -648,9 +648,49 @@
 
     function extractTextInsideOutline() {
       if (outlinePoints.length < 3) return '';
-      const matchedItems = textItemsForViewport(currentPage.pageNumber, currentViewport)
+      const matchedItems = uniqueTextItemsForViewport(currentPage.pageNumber, currentViewport)
         .filter((item) => doesPolygonTouchRect(outlinePoints, item.rect));
       return joinItemsByRows(matchedItems);
+    }
+
+
+    function uniqueTextItemsForViewport(pageNumber, viewport) {
+      const positionedTextMap = new Map();
+
+      textItemsForViewport(pageNumber, viewport).forEach((item) => {
+        const point = textPlacementPoint(item.rect);
+        const key = `${point.x},${point.y}`;
+        const existingText = positionedTextMap.get(key);
+        positionedTextMap.set(key, existingText ? `${existingText}${item.text}` : item.text);
+      });
+
+      return [...positionedTextMap.entries()].map(([key, text]) => {
+        const [x, y] = key.split(',').map(Number);
+        const rect = placementRectFromPoint(x, y);
+        return {
+          text,
+          rect,
+          center: rectCenter(rect),
+          point: { x, y },
+          endsLine: false,
+        };
+      });
+    }
+
+    function textPlacementPoint(rect) {
+      return {
+        x: Math.floor(rect.x1),
+        y: Math.floor(rect.y1),
+      };
+    }
+
+    function placementRectFromPoint(x, y) {
+      return {
+        x1: x,
+        y1: y,
+        x2: x + 1,
+        y2: y + 1,
+      };
     }
 
     function joinItemsAsColumn(items) {
@@ -664,11 +704,7 @@
     function formatTextWithCoordinates(item) {
       const text = item.text.trim();
       if (!text) return '';
-      return `${text}  X:${formatCoordinate(item.center.x)} Y:${formatCoordinate(item.center.y)}`;
-    }
-
-    function formatCoordinate(value) {
-      return Number.isFinite(value) ? value.toFixed(1) : '0.0';
+      return `${text}  X:${item.point.x} Y:${item.point.y}`;
     }
 
     function joinItemsByRows(items) {
@@ -727,7 +763,7 @@
       debugContext.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
       if (!isDebugVisible || !currentPage || !currentViewport) return;
 
-      const items = textItemsForViewport(currentPage.pageNumber, currentViewport);
+      const items = uniqueTextItemsForViewport(currentPage.pageNumber, currentViewport);
       debugContext.save();
       debugContext.lineWidth = 1;
       debugContext.strokeStyle = 'rgb(255 112 67 / 75%)';
