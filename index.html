@@ -55,7 +55,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
       gap: 1rem;
-      padding: 1rem clamp(1rem, 4vw, 2rem) 2rem;
+      padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
 
     .toolbar,
@@ -69,6 +69,20 @@
       display: flex;
       flex-wrap: wrap;
       gap: .5rem;
+    }
+
+    .page-controls {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .page-status {
+      color: #182033;
+      font-weight: 700;
+      min-width: 5.5rem;
+      text-align: center;
     }
 
     button,
@@ -104,7 +118,7 @@
     .viewer-shell {
       min-height: 72vh;
       overflow: auto;
-      padding: 1rem;
+      padding: 0 1rem 1rem;
     }
 
     .page-stage {
@@ -130,9 +144,14 @@
       pointer-events: none;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     .placeholder {
       display: grid;
-      min-height: 60vh;
+      min-height: 0;
+      padding: .75rem 0;
       place-items: center;
       text-align: center;
       color: #5d677a;
@@ -190,14 +209,19 @@
     <div class="toolbar-row">
       <input id="pdfInput" type="file" accept="application/pdf">
       <button id="extractButton" disabled>囲み文字を抽出</button>
-      <button id="clearButton" class="secondary" disabled>線を消す</button>
+      <button id="clearButton" class="secondary" disabled>囲み線を消す</button>
       <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
+      <div class="page-controls" aria-label="ページ切り替え">
+        <button id="previousPageButton" class="secondary" disabled>前のページ</button>
+        <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
+        <button id="nextPageButton" class="secondary" disabled>次のページ</button>
+      </div>
     </div>
   </header>
 
   <main>
-    <section class="viewer-shell" aria-label="PDF表示領域">
-      <div id="placeholder" class="placeholder">
+    <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
+      <div id="placeholder" class="placeholder" hidden>
         <div>
           <h2>PDFを選択してください</h2>
           <p class="hint">PDFを開いて、Apple Pencil・タッチ・マウスで文字を囲んでください。</p>
@@ -213,14 +237,16 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存した文字情報から、囲み線と重なった文字矩形を検索し、近いY座標を同じ行としてX順に結合します。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。囲み線を書き終えるたびに抽出結果へ追記し、抽出結果をリセットするまで残ります。囲み線は直近の1本を紫、それ以外を水色で表示します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
+      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
       <div>
         <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、行ごとに確認できます。</p>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
     </aside>
   </main>
 
@@ -233,24 +259,31 @@
     const extractButton = document.querySelector('#extractButton');
     const clearButton = document.querySelector('#clearButton');
     const debugButton = document.querySelector('#debugButton');
+    const previousPageButton = document.querySelector('#previousPageButton');
+    const nextPageButton = document.querySelector('#nextPageButton');
+    const pageStatus = document.querySelector('#pageStatus');
     const placeholder = document.querySelector('#placeholder');
+    const viewerShell = document.querySelector('#viewerShell');
     const stage = document.querySelector('#stage');
     const pdfCanvas = document.querySelector('#pdfCanvas');
     const drawCanvas = document.querySelector('#drawCanvas');
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
+    const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
+    const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
 
     let pdfDocument = null;
     let currentPage = null;
+    let currentPageNumber = 0;
     let currentViewport = null;
     let cachedPages = [];
     let isDebugVisible = false;
-    let outlinePoints = [];
-    let outlineBeforeDrawing = [];
+    let outlines = [];
+    let activeOutline = null;
     let activePointers = new Map();
     let drawingPointerId = null;
     let pendingTouchPointerId = null;
@@ -259,6 +292,7 @@
     let isGestureInProgress = false;
 
     const touchDrawStartDistance = 8;
+    const defaultResultText = 'まだ抽出されていません。';
 
     pdfInput.addEventListener('change', async (event) => {
       const [file] = event.target.files;
@@ -272,21 +306,22 @@
       pdfDocument = await pdfjsLib.getDocument({ data }).promise;
       cachedPages = await cacheAllTextItems(pdfDocument);
 
-      currentPage = await pdfDocument.getPage(1);
-      currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
-      await renderPage();
-      clearDrawing();
+      await showPage(1);
+      resetExtractionResult();
+      viewerShell.hidden = false;
       placeholder.hidden = true;
       stage.hidden = false;
       extractButton.disabled = false;
       clearButton.disabled = false;
       debugButton.disabled = false;
-      result.value = 'まだ抽出されていません。';
-      result.textContent = result.value;
-      updateDetectedText();
+      updatePageControls();
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    resetResultButton.addEventListener('click', resetExtractionResult);
+    resetDetectedTextButton.addEventListener('click', resetDetectedText);
+    previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
+    nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
       isDebugVisible = !isDebugVisible;
       debugButton.setAttribute('aria-pressed', String(isDebugVisible));
@@ -295,8 +330,7 @@
     });
     extractButton.addEventListener('click', () => {
       const extracted = extractTextInsideOutline();
-      result.value = extracted || '囲み内のテキストを抽出できませんでした。';
-      result.textContent = result.value;
+      appendExtractionResult(extracted);
     });
 
     drawCanvas.addEventListener('pointerdown', (event) => {
@@ -330,9 +364,8 @@
       }
 
       if (!isDrawing || event.pointerId !== drawingPointerId) return;
-      outlinePoints.push(point);
-      drawContext.lineTo(point.x, point.y);
-      drawContext.stroke();
+      activeOutline.push(point);
+      redrawOutline();
     });
 
     drawCanvas.addEventListener('pointerup', finishDrawing);
@@ -341,10 +374,29 @@
       if (event.pointerId === drawingPointerId && event.buttons === 0) finishDrawing(event);
     });
 
+    function updatePageControls() {
+      const totalPages = pdfDocument ? pdfDocument.numPages : 0;
+      pageStatus.textContent = `${currentPageNumber || 0} / ${totalPages}`;
+      previousPageButton.disabled = !pdfDocument || currentPageNumber <= 1;
+      nextPageButton.disabled = !pdfDocument || currentPageNumber >= totalPages;
+    }
+
     function bestScaleForScreen(page) {
       const unscaled = page.getViewport({ scale: 1 });
       const availableWidth = Math.min(window.innerWidth - 48, 980);
       return Math.max(0.75, Math.min(1.75, availableWidth / unscaled.width));
+    }
+
+    async function showPage(pageNumber) {
+      if (!pdfDocument || pageNumber < 1 || pageNumber > pdfDocument.numPages) return;
+
+      currentPageNumber = pageNumber;
+      currentPage = await pdfDocument.getPage(pageNumber);
+      currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
+      await renderPage();
+      clearDrawing();
+      updateDetectedText();
+      updatePageControls();
     }
 
     async function renderPage() {
@@ -356,13 +408,22 @@
         canvas.style.height = `${height}px`;
       });
 
-      drawContext.strokeStyle = '#0b63ce';
-      drawContext.lineWidth = 6;
-      drawContext.lineCap = 'round';
-      drawContext.lineJoin = 'round';
+      applyOutlineStyle();
 
       await currentPage.render({ canvasContext: pdfContext, viewport: currentViewport }).promise;
       redrawDebugOverlay();
+    }
+
+    function applyOutlineStyle() {
+      applyOutlineStyleForColor('#0b63ce');
+    }
+
+    function applyOutlineStyleForColor(color) {
+      drawContext.strokeStyle = color;
+      drawContext.lineWidth = 2;
+      drawContext.lineCap = 'round';
+      drawContext.lineJoin = 'round';
+      drawContext.setLineDash([8, 6]);
     }
 
     async function cacheAllTextItems(pdf) {
@@ -429,12 +490,29 @@
 
     function textItemRect(item, viewport) {
       const transform = pdfjsLib.Util.transform(viewport.transform, item.transform);
-      const height = item.height || Math.hypot(transform[2], transform[3]);
-      const rawBox = pdfjsLib.Util.getAxialAlignedBoundingBox([0, 0, item.width, height], transform);
-      const x1 = Math.min(rawBox[0], rawBox[2]);
-      const y1 = Math.min(rawBox[1], rawBox[3]);
-      const x2 = Math.max(rawBox[0], rawBox[2]);
-      const y2 = Math.max(rawBox[1], rawBox[3]);
+      const directionLength = Math.hypot(transform[0], transform[1]);
+      const advanceScale = directionLength > 0
+        ? (item.width * viewport.scale) / directionLength
+        : 0;
+      const advance = {
+        x: transform[0] * advanceScale,
+        y: transform[1] * advanceScale,
+      };
+      const height = {
+        x: transform[2],
+        y: transform[3],
+      };
+      const origin = { x: transform[4], y: transform[5] };
+      const corners = [
+        origin,
+        { x: origin.x + advance.x, y: origin.y + advance.y },
+        { x: origin.x + height.x, y: origin.y + height.y },
+        { x: origin.x + advance.x + height.x, y: origin.y + advance.y + height.y },
+      ];
+      const x1 = Math.min(...corners.map((point) => point.x));
+      const y1 = Math.min(...corners.map((point) => point.y));
+      const x2 = Math.max(...corners.map((point) => point.x));
+      const y2 = Math.max(...corners.map((point) => point.y));
       return { x1, y1, x2, y2, width: x2 - x1, height: y2 - y1 };
     }
 
@@ -484,12 +562,9 @@
       drawingPointerId = pointerId;
       pendingTouchPointerId = null;
       pendingTouchStartPoint = null;
-      outlineBeforeDrawing = [...outlinePoints];
-      outlinePoints = [point];
+      activeOutline = [point];
       drawCanvas.setPointerCapture(pointerId);
-      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      drawContext.beginPath();
-      drawContext.moveTo(point.x, point.y);
+      redrawOutline();
     }
 
     function finishDrawing(event) {
@@ -509,10 +584,13 @@
       if (drawCanvas.hasPointerCapture(event.pointerId)) {
         drawCanvas.releasePointerCapture(event.pointerId);
       }
-      if (outlinePoints.length > 2) {
-        drawContext.closePath();
-        drawContext.stroke();
+      if (activeOutline && activeOutline.length > 2) {
+        const completedOutline = [...activeOutline];
+        outlines.push(completedOutline);
+        appendExtractionResult(extractTextInsideOutlines([completedOutline]));
       }
+      activeOutline = null;
+      redrawOutline();
     }
 
     function cancelDrawingForGesture() {
@@ -523,7 +601,7 @@
 
       isDrawing = false;
       drawingPointerId = null;
-      outlinePoints = [...outlineBeforeDrawing];
+      activeOutline = null;
       if (capturedPointerId !== null && drawCanvas.hasPointerCapture(capturedPointerId)) {
         drawCanvas.releasePointerCapture(capturedPointerId);
       }
@@ -536,20 +614,38 @@
 
     function redrawOutline() {
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      if (outlinePoints.length === 0) return;
+      if (outlines.length === 0 && !activeOutline) return;
 
+      const inactiveOutlineColor = '#22c1dc';
+      const activeOutlineColor = '#8b5cf6';
+
+      outlines.forEach((outline) => {
+        drawOutlinePath(outline, inactiveOutlineColor);
+      });
+
+      if (activeOutline) {
+        drawOutlinePath(activeOutline, activeOutlineColor);
+      } else if (outlines.length > 0) {
+        drawOutlinePath(outlines[outlines.length - 1], activeOutlineColor);
+      }
+    }
+
+    function drawOutlinePath(points, color) {
+      if (!points || points.length === 0) return;
+
+      applyOutlineStyleForColor(color);
       drawContext.beginPath();
-      drawContext.moveTo(outlinePoints[0].x, outlinePoints[0].y);
-      outlinePoints.slice(1).forEach((point) => {
+      drawContext.moveTo(points[0].x, points[0].y);
+      points.slice(1).forEach((point) => {
         drawContext.lineTo(point.x, point.y);
       });
-      if (outlinePoints.length > 2) drawContext.closePath();
+      if (points.length > 2) drawContext.closePath();
       drawContext.stroke();
     }
 
     function clearDrawing() {
-      outlinePoints = [];
-      outlineBeforeDrawing = [];
+      outlines = [];
+      activeOutline = null;
       activePointers.clear();
       drawingPointerId = null;
       pendingTouchPointerId = null;
@@ -557,7 +653,21 @@
       isDrawing = false;
       isGestureInProgress = false;
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      result.value = 'まだ抽出されていません。';
+    }
+
+    function resetExtractionResult() {
+      result.value = defaultResultText;
+      result.textContent = result.value;
+    }
+
+    function appendExtractionResult(text) {
+      const extracted = text.trim();
+      if (!extracted) return;
+
+      const current = result.value.trim();
+      result.value = !current || current === defaultResultText
+        ? extracted
+        : `${result.value}\n${extracted}`;
       result.textContent = result.value;
     }
 
@@ -567,7 +677,7 @@
         return;
       }
 
-      const detected = joinItemsByRows(textItemsForViewport(currentPage.pageNumber, currentViewport));
+      const detected = joinItemsAsColumn(textItemsWithPlacementKeysForViewport(currentPage.pageNumber, currentViewport));
       setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
     }
 
@@ -576,11 +686,102 @@
       detectedText.textContent = detectedText.value;
     }
 
+    function resetDetectedText() {
+      setDetectedText('');
+    }
+
     function extractTextInsideOutline() {
-      if (outlinePoints.length < 3) return '';
-      const matchedItems = textItemsForViewport(currentPage.pageNumber, currentViewport)
-        .filter((item) => doesPolygonTouchRect(outlinePoints, item.rect));
-      return joinItemsByRows(matchedItems);
+      const allOutlines = [...outlines];
+      if (activeOutline && activeOutline.length > 2) {
+        allOutlines.push(activeOutline);
+      }
+      return extractTextInsideOutlines(allOutlines);
+    }
+
+    function extractTextInsideOutlines(allOutlines) {
+      if (allOutlines.length === 0) return '';
+      const textItemsByPoint = textItemCoordinateMapForViewport(currentPage.pageNumber, currentViewport);
+      const hitKeys = new Set();
+
+      allOutlines.forEach((outlinePoints) => {
+        if (outlinePoints.length < 3) return;
+        textItemsByPoint.forEach((item, key) => {
+          if (isPointInsidePolygon(item.point, outlinePoints) || doesPolygonTouchRect(outlinePoints, item.rect)) {
+            hitKeys.add(key);
+          }
+        });
+      });
+
+      const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
+      return joinItemsOneByOne(matchedItems);
+    }
+
+
+    function textItemsWithPlacementKeysForViewport(pageNumber, viewport) {
+      return [...textItemCoordinateMapForViewport(pageNumber, viewport).values()];
+    }
+
+    function textItemCoordinateMapForViewport(pageNumber, viewport) {
+      const itemsByPlacementPoint = new Map();
+
+      textItemsForViewport(pageNumber, viewport).forEach((item) => {
+        const point = placementPoint(item.rect);
+        const key = coordinateKey(point);
+        const existingItem = itemsByPlacementPoint.get(key);
+
+        if (existingItem) {
+          if (!existingItem.textParts.has(item.text)) {
+            existingItem.textParts.add(item.text);
+            existingItem.text = [...existingItem.textParts].join('');
+          }
+          existingItem.endsLine = existingItem.endsLine || item.endsLine;
+          return;
+        }
+
+        itemsByPlacementPoint.set(key, {
+          text: item.text,
+          textParts: new Set([item.text]),
+          rect: item.rect,
+          center: item.center,
+          point,
+          endsLine: item.endsLine,
+        });
+      });
+
+      return itemsByPlacementPoint;
+    }
+
+    function placementPoint(rect) {
+      return {
+        x: rect.x1,
+        y: rect.y1,
+      };
+    }
+
+    function coordinateKey(point) {
+      return `${point.x},${point.y}`;
+    }
+
+    function joinItemsAsColumn(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map(formatTextWithCoordinates)
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function joinItemsOneByOne(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map((item) => item.text.trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function formatTextWithCoordinates(item) {
+      const text = item.text.trim();
+      if (!text) return '';
+      return `${text}  X:${item.point.x} Y:${item.point.y}`;
     }
 
     function joinItemsByRows(items) {
@@ -639,7 +840,7 @@
       debugContext.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
       if (!isDebugVisible || !currentPage || !currentViewport) return;
 
-      const items = textItemsForViewport(currentPage.pageNumber, currentViewport);
+      const items = textItemsWithPlacementKeysForViewport(currentPage.pageNumber, currentViewport);
       debugContext.save();
       debugContext.lineWidth = 1;
       debugContext.strokeStyle = 'rgb(255 112 67 / 75%)';
