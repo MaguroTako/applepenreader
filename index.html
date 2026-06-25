@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V016</span>
+      <span class="version-badge" aria-label="バージョン">V017</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -237,7 +237,7 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてからX順に結合します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <div>
@@ -658,7 +658,7 @@
       });
 
       const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
-      return joinItemsByRows(matchedItems);
+      return joinItemsOneByOne(matchedItems);
     }
 
 
@@ -711,6 +711,14 @@
       return [...items]
         .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
         .map(formatTextWithCoordinates)
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function joinItemsOneByOne(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map((item) => item.text.trim())
         .filter(Boolean)
         .join('\n');
     }
