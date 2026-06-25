@@ -12,7 +12,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Lets the user draw a thin dashed closed outline around text.
 - Allows browser pinch zoom on the drawing area without creating unwanted lines.
 - Extracts positioned text fragments whose center point is inside the outline or whose rectangle overlaps the outline.
-- Shows the text detected on the visible PDF page below the extraction result as a single vertical column of detected fragments.
+- Shows the text detected on the visible PDF page below the extraction result as a single vertical column of detected fragments, with each fragment's center X/Y coordinates beside the text.
 - Shows an optional debug overlay for text fragment rectangles and center points.
 - Groups extracted fragments into rows using PDF.js line-end information and nearby Y coordinates, then joins each row in X order.
 
@@ -35,12 +35,12 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 4. Draw a balloon around text with Apple Pencil, touch, or mouse. Pinch with two fingers to zoom the page; pinch gestures do not create drawing lines.
 5. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
 6. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
-7. Check **検出したテキスト** below the extraction result if you want to confirm all text fragments found on the visible page in one vertical column.
+7. Check **検出したテキスト** below the extraction result if you want to confirm all text fragments found on the visible page in one vertical column with X/Y coordinates beside each text item.
 8. Tap **囲み文字を抽出**.
 9. Tap **線を消す** to reset the outline and result.
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the selected PDF page with PDF.js, updates previous/next buttons and the current-page/total-page count, overlays a second canvas for pointer input, styles the outline as a thin dashed line, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, builds each text rectangle from its PDF.js baseline direction and font height without scaling its reported width twice, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js as one vertical column below the extraction result, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the selected PDF page with PDF.js, updates previous/next buttons and the current-page/total-page count, overlays a second canvas for pointer input, styles the outline as a thin dashed line, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, builds each text rectangle from its PDF.js baseline direction and font height without scaling its reported width twice, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js as one vertical column below the extraction result with center X/Y coordinates beside each item, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
 This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
