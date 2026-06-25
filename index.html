@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V013</span>
+      <span class="version-badge" aria-label="バージョン">V014</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -237,12 +237,12 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存した文字情報から、囲み線と重なった文字矩形を検索し、近いY座標を同じ行としてX順に結合します。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避けてからX順に結合します。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <div>
         <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、1項目ずつ縦一列で確認できます。各テキストの横に、小数点を切り捨てて量子化した配置ポイントX/Yも表示します。</p>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、小数点を切り捨てた登録キーX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
     </aside>
@@ -648,36 +648,48 @@
 
     function extractTextInsideOutline() {
       if (outlinePoints.length < 3) return '';
-      const matchedItems = quantizedTextItemsForViewport(currentPage.pageNumber, currentViewport)
-        .filter((item) => doesPolygonTouchRect(outlinePoints, item.rect));
+      const textItemsByPoint = textItemCoordinateMapForViewport(currentPage.pageNumber, currentViewport);
+      const hitKeys = new Set();
+
+      textItemsByPoint.forEach((item, key) => {
+        if (isPointInsidePolygon(item.point, outlinePoints) || doesPolygonTouchRect(outlinePoints, item.rect)) {
+          hitKeys.add(key);
+        }
+      });
+
+      const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
       return joinItemsByRows(matchedItems);
     }
 
 
     function quantizedTextItemsForViewport(pageNumber, viewport) {
-      const textByPlacementPoint = new Map();
-      const metadataByPlacementPoint = new Map();
+      return [...textItemCoordinateMapForViewport(pageNumber, viewport).values()];
+    }
+
+    function textItemCoordinateMapForViewport(pageNumber, viewport) {
+      const itemsByPlacementPoint = new Map();
 
       textItemsForViewport(pageNumber, viewport).forEach((item) => {
         const point = quantizedPlacementPoint(item.rect);
-        const key = `${point.x},${point.y}`;
-        const existingText = textByPlacementPoint.get(key);
-        textByPlacementPoint.set(key, existingText ? `${existingText}${item.text}` : item.text);
+        const key = coordinateKey(point);
+        const existingItem = itemsByPlacementPoint.get(key);
 
-        if (!metadataByPlacementPoint.has(key)) {
-          metadataByPlacementPoint.set(key, {
-            rect: item.rect,
-            center: item.center,
-            point,
-            endsLine: item.endsLine,
-          });
+        if (existingItem) {
+          existingItem.text = `${existingItem.text}${item.text}`;
+          existingItem.endsLine = existingItem.endsLine || item.endsLine;
+          return;
         }
+
+        itemsByPlacementPoint.set(key, {
+          text: item.text,
+          rect: item.rect,
+          center: item.center,
+          point,
+          endsLine: item.endsLine,
+        });
       });
 
-      return [...textByPlacementPoint.entries()].map(([key, text]) => ({
-        text,
-        ...metadataByPlacementPoint.get(key),
-      }));
+      return itemsByPlacementPoint;
     }
 
     function quantizedPlacementPoint(rect) {
@@ -685,6 +697,10 @@
         x: Math.floor(rect.x1),
         y: Math.floor(rect.y1),
       };
+    }
+
+    function coordinateKey(point) {
+      return `${point.x},${point.y}`;
     }
 
     function joinItemsAsColumn(items) {
