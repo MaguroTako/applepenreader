@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V009</span>
+      <span class="version-badge" aria-label="バージョン">V010</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -242,7 +242,7 @@
       <output id="result">まだ抽出されていません。</output>
       <div>
         <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、行ごとに確認できます。</p>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、1項目ずつ縦一列で確認できます。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
     </aside>
@@ -637,7 +637,7 @@
         return;
       }
 
-      const detected = joinItemsByRows(textItemsForViewport(currentPage.pageNumber, currentViewport));
+      const detected = joinItemsAsColumn(textItemsForViewport(currentPage.pageNumber, currentViewport));
       setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
     }
 
@@ -651,6 +651,14 @@
       const matchedItems = textItemsForViewport(currentPage.pageNumber, currentViewport)
         .filter((item) => doesPolygonTouchRect(outlinePoints, item.rect));
       return joinItemsByRows(matchedItems);
+    }
+
+    function joinItemsAsColumn(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map((item) => item.text.trim())
+        .filter(Boolean)
+        .join('\n');
     }
 
     function joinItemsByRows(items) {
