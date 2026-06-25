@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V019</span>
+      <span class="version-badge" aria-label="バージョン">V020</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -245,6 +245,7 @@
         <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
     </aside>
   </main>
 
@@ -268,6 +269,7 @@
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
     const detectedText = document.querySelector('#detectedText');
+    const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -312,6 +314,7 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
@@ -661,6 +664,10 @@
     function setDetectedText(text) {
       detectedText.value = text;
       detectedText.textContent = detectedText.value;
+    }
+
+    function resetDetectedText() {
+      setDetectedText('');
     }
 
     function extractTextInsideOutline() {
