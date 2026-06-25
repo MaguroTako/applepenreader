@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V014</span>
+      <span class="version-badge" aria-label="バージョン">V015</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -237,12 +237,12 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避けてからX順に結合します。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避けてからX順に結合します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <div>
         <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、小数点を切り捨てた登録キーX/Yも表示します。</p>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
     </aside>
@@ -637,7 +637,7 @@
         return;
       }
 
-      const detected = joinItemsAsColumn(quantizedTextItemsForViewport(currentPage.pageNumber, currentViewport));
+      const detected = joinItemsAsColumn(textItemsWithPlacementKeysForViewport(currentPage.pageNumber, currentViewport));
       setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
     }
 
@@ -662,7 +662,7 @@
     }
 
 
-    function quantizedTextItemsForViewport(pageNumber, viewport) {
+    function textItemsWithPlacementKeysForViewport(pageNumber, viewport) {
       return [...textItemCoordinateMapForViewport(pageNumber, viewport).values()];
     }
 
@@ -670,7 +670,7 @@
       const itemsByPlacementPoint = new Map();
 
       textItemsForViewport(pageNumber, viewport).forEach((item) => {
-        const point = quantizedPlacementPoint(item.rect);
+        const point = placementPoint(item.rect);
         const key = coordinateKey(point);
         const existingItem = itemsByPlacementPoint.get(key);
 
@@ -692,10 +692,10 @@
       return itemsByPlacementPoint;
     }
 
-    function quantizedPlacementPoint(rect) {
+    function placementPoint(rect) {
       return {
-        x: Math.floor(rect.x1),
-        y: Math.floor(rect.y1),
+        x: rect.x1,
+        y: rect.y1,
       };
     }
 
@@ -773,7 +773,7 @@
       debugContext.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
       if (!isDebugVisible || !currentPage || !currentViewport) return;
 
-      const items = quantizedTextItemsForViewport(currentPage.pageNumber, currentViewport);
+      const items = textItemsWithPlacementKeysForViewport(currentPage.pageNumber, currentViewport);
       debugContext.save();
       debugContext.lineWidth = 1;
       debugContext.strokeStyle = 'rgb(255 112 67 / 75%)';
