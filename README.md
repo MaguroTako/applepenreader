@@ -8,7 +8,8 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the selected page with PDF.js and provides previous/next page navigation with a current-page/total-page count.
 - Places a transparent drawing canvas above the PDF page.
-- Lets the user draw a closed outline around text.
+- Keeps the PDF display area hidden until a file is selected, then shows the page close to the top of the viewer.
+- Lets the user draw a thin dashed closed outline around text.
 - Allows browser pinch zoom on the drawing area without creating unwanted lines.
 - Extracts positioned text fragments whose center point is inside the outline or whose rectangle overlaps the outline.
 - Shows the text detected on the visible PDF page below the extraction result.
@@ -40,6 +41,6 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 ## Implementation notes
 
-The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the selected PDF page with PDF.js, updates previous/next buttons and the current-page/total-page count, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, builds each text rectangle from its PDF.js baseline direction and font height without scaling its reported width twice, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js below the extraction result, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
+The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` renders the selected PDF page with PDF.js, updates previous/next buttons and the current-page/total-page count, overlays a second canvas for pointer input, styles the outline as a thin dashed line, stores the drawn outline points in canvas coordinates, waits for one-finger touch movement before drawing so two-finger pinch gestures can start without leaving stray lines, ignores active multi-pointer gestures, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, builds each text rectangle from its PDF.js baseline direction and font height without scaling its reported width twice, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js below the extraction result, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
 This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
