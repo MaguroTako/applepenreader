@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V015</span>
+      <span class="version-badge" aria-label="バージョン">V016</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -237,7 +237,7 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避けてからX順に結合します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてからX順に結合します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <div>
@@ -675,13 +675,17 @@
         const existingItem = itemsByPlacementPoint.get(key);
 
         if (existingItem) {
-          existingItem.text = `${existingItem.text}${item.text}`;
+          if (!existingItem.textParts.has(item.text)) {
+            existingItem.textParts.add(item.text);
+            existingItem.text = [...existingItem.textParts].join('');
+          }
           existingItem.endsLine = existingItem.endsLine || item.endsLine;
           return;
         }
 
         itemsByPlacementPoint.set(key, {
           text: item.text,
+          textParts: new Set([item.text]),
           rect: item.rect,
           center: item.center,
           point,
