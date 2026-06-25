@@ -203,13 +203,13 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V017</span>
+      <span class="version-badge" aria-label="バージョン">V020</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
       <input id="pdfInput" type="file" accept="application/pdf">
       <button id="extractButton" disabled>囲み文字を抽出</button>
-      <button id="clearButton" class="secondary" disabled>線を消す</button>
+      <button id="clearButton" class="secondary" disabled>囲み線を消す</button>
       <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
       <div class="page-controls" aria-label="ページ切り替え">
         <button id="previousPageButton" class="secondary" disabled>前のページ</button>
@@ -237,7 +237,7 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。囲み線は直近の1本を紫、それ以外を水色で表示し、囲み線を消すまで残ります。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <div>
@@ -245,6 +245,7 @@
         <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
       </div>
       <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
     </aside>
   </main>
 
@@ -268,6 +269,7 @@
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
     const detectedText = document.querySelector('#detectedText');
+    const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -278,8 +280,8 @@
     let currentViewport = null;
     let cachedPages = [];
     let isDebugVisible = false;
-    let outlinePoints = [];
-    let outlineBeforeDrawing = [];
+    let outlines = [];
+    let activeOutline = null;
     let activePointers = new Map();
     let drawingPointerId = null;
     let pendingTouchPointerId = null;
@@ -312,6 +314,7 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
@@ -357,9 +360,8 @@
       }
 
       if (!isDrawing || event.pointerId !== drawingPointerId) return;
-      outlinePoints.push(point);
-      drawContext.lineTo(point.x, point.y);
-      drawContext.stroke();
+      activeOutline.push(point);
+      redrawOutline();
     });
 
     drawCanvas.addEventListener('pointerup', finishDrawing);
@@ -409,7 +411,11 @@
     }
 
     function applyOutlineStyle() {
-      drawContext.strokeStyle = '#0b63ce';
+      applyOutlineStyleForColor('#0b63ce');
+    }
+
+    function applyOutlineStyleForColor(color) {
+      drawContext.strokeStyle = color;
       drawContext.lineWidth = 2;
       drawContext.lineCap = 'round';
       drawContext.lineJoin = 'round';
@@ -552,13 +558,9 @@
       drawingPointerId = pointerId;
       pendingTouchPointerId = null;
       pendingTouchStartPoint = null;
-      outlineBeforeDrawing = [...outlinePoints];
-      outlinePoints = [point];
+      activeOutline = [point];
       drawCanvas.setPointerCapture(pointerId);
-      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      applyOutlineStyle();
-      drawContext.beginPath();
-      drawContext.moveTo(point.x, point.y);
+      redrawOutline();
     }
 
     function finishDrawing(event) {
@@ -578,10 +580,11 @@
       if (drawCanvas.hasPointerCapture(event.pointerId)) {
         drawCanvas.releasePointerCapture(event.pointerId);
       }
-      if (outlinePoints.length > 2) {
-        drawContext.closePath();
-        drawContext.stroke();
+      if (activeOutline && activeOutline.length > 2) {
+        outlines.push([...activeOutline]);
       }
+      activeOutline = null;
+      redrawOutline();
     }
 
     function cancelDrawingForGesture() {
@@ -592,7 +595,7 @@
 
       isDrawing = false;
       drawingPointerId = null;
-      outlinePoints = [...outlineBeforeDrawing];
+      activeOutline = null;
       if (capturedPointerId !== null && drawCanvas.hasPointerCapture(capturedPointerId)) {
         drawCanvas.releasePointerCapture(capturedPointerId);
       }
@@ -605,21 +608,38 @@
 
     function redrawOutline() {
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      if (outlinePoints.length === 0) return;
+      if (outlines.length === 0 && !activeOutline) return;
 
-      applyOutlineStyle();
+      const inactiveOutlineColor = '#22c1dc';
+      const activeOutlineColor = '#8b5cf6';
+
+      outlines.forEach((outline) => {
+        drawOutlinePath(outline, inactiveOutlineColor);
+      });
+
+      if (activeOutline) {
+        drawOutlinePath(activeOutline, activeOutlineColor);
+      } else if (outlines.length > 0) {
+        drawOutlinePath(outlines[outlines.length - 1], activeOutlineColor);
+      }
+    }
+
+    function drawOutlinePath(points, color) {
+      if (!points || points.length === 0) return;
+
+      applyOutlineStyleForColor(color);
       drawContext.beginPath();
-      drawContext.moveTo(outlinePoints[0].x, outlinePoints[0].y);
-      outlinePoints.slice(1).forEach((point) => {
+      drawContext.moveTo(points[0].x, points[0].y);
+      points.slice(1).forEach((point) => {
         drawContext.lineTo(point.x, point.y);
       });
-      if (outlinePoints.length > 2) drawContext.closePath();
+      if (points.length > 2) drawContext.closePath();
       drawContext.stroke();
     }
 
     function clearDrawing() {
-      outlinePoints = [];
-      outlineBeforeDrawing = [];
+      outlines = [];
+      activeOutline = null;
       activePointers.clear();
       drawingPointerId = null;
       pendingTouchPointerId = null;
@@ -646,15 +666,26 @@
       detectedText.textContent = detectedText.value;
     }
 
+    function resetDetectedText() {
+      setDetectedText('');
+    }
+
     function extractTextInsideOutline() {
-      if (outlinePoints.length < 3) return '';
+      const allOutlines = [...outlines];
+      if (activeOutline && activeOutline.length > 2) {
+        allOutlines.push(activeOutline);
+      }
+      if (allOutlines.length === 0) return '';
       const textItemsByPoint = textItemCoordinateMapForViewport(currentPage.pageNumber, currentViewport);
       const hitKeys = new Set();
 
-      textItemsByPoint.forEach((item, key) => {
-        if (isPointInsidePolygon(item.point, outlinePoints) || doesPolygonTouchRect(outlinePoints, item.rect)) {
-          hitKeys.add(key);
-        }
+      allOutlines.forEach((outlinePoints) => {
+        if (outlinePoints.length < 3) return;
+        textItemsByPoint.forEach((item, key) => {
+          if (isPointInsidePolygon(item.point, outlinePoints) || doesPolygonTouchRect(outlinePoints, item.rect)) {
+            hitKeys.add(key);
+          }
+        });
       });
 
       const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
