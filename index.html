@@ -203,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V020</span>
+      <span class="version-badge" aria-label="バージョン">V021</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -237,9 +237,10 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。囲み線は直近の1本を紫、それ以外を水色で表示し、囲み線を消すまで残ります。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
+        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。囲み線を書き終えるたびに抽出結果へ追記し、抽出結果をリセットするまで残ります。囲み線は直近の1本を紫、それ以外を水色で表示します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
+      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
       <div>
         <h2>検出したテキスト</h2>
         <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
@@ -268,6 +269,7 @@
     const drawCanvas = document.querySelector('#drawCanvas');
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
+    const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -290,6 +292,7 @@
     let isGestureInProgress = false;
 
     const touchDrawStartDistance = 8;
+    const defaultResultText = 'まだ抽出されていません。';
 
     pdfInput.addEventListener('change', async (event) => {
       const [file] = event.target.files;
@@ -304,6 +307,7 @@
       cachedPages = await cacheAllTextItems(pdfDocument);
 
       await showPage(1);
+      resetExtractionResult();
       viewerShell.hidden = false;
       placeholder.hidden = true;
       stage.hidden = false;
@@ -314,6 +318,7 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    resetResultButton.addEventListener('click', resetExtractionResult);
     resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
@@ -325,8 +330,7 @@
     });
     extractButton.addEventListener('click', () => {
       const extracted = extractTextInsideOutline();
-      result.value = extracted || '囲み内のテキストを抽出できませんでした。';
-      result.textContent = result.value;
+      appendExtractionResult(extracted);
     });
 
     drawCanvas.addEventListener('pointerdown', (event) => {
@@ -581,7 +585,9 @@
         drawCanvas.releasePointerCapture(event.pointerId);
       }
       if (activeOutline && activeOutline.length > 2) {
-        outlines.push([...activeOutline]);
+        const completedOutline = [...activeOutline];
+        outlines.push(completedOutline);
+        appendExtractionResult(extractTextInsideOutlines([completedOutline]));
       }
       activeOutline = null;
       redrawOutline();
@@ -647,7 +653,21 @@
       isDrawing = false;
       isGestureInProgress = false;
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      result.value = 'まだ抽出されていません。';
+    }
+
+    function resetExtractionResult() {
+      result.value = defaultResultText;
+      result.textContent = result.value;
+    }
+
+    function appendExtractionResult(text) {
+      const extracted = text.trim();
+      if (!extracted) return;
+
+      const current = result.value.trim();
+      result.value = !current || current === defaultResultText
+        ? extracted
+        : `${result.value}\n${extracted}`;
       result.textContent = result.value;
     }
 
@@ -675,6 +695,10 @@
       if (activeOutline && activeOutline.length > 2) {
         allOutlines.push(activeOutline);
       }
+      return extractTextInsideOutlines(allOutlines);
+    }
+
+    function extractTextInsideOutlines(allOutlines) {
       if (allOutlines.length === 0) return '';
       const textItemsByPoint = textItemCoordinateMapForViewport(currentPage.pageNumber, currentViewport);
       const hitKeys = new Set();
