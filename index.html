@@ -71,6 +71,20 @@
       gap: .5rem;
     }
 
+    .page-controls {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .page-status {
+      color: #182033;
+      font-weight: 700;
+      min-width: 5.5rem;
+      text-align: center;
+    }
+
     button,
     input::file-selector-button {
       border: 0;
@@ -184,7 +198,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V005</span>
+      <span class="version-badge" aria-label="バージョン">V006</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -192,6 +206,11 @@
       <button id="extractButton" disabled>囲み文字を抽出</button>
       <button id="clearButton" class="secondary" disabled>線を消す</button>
       <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
+      <div class="page-controls" aria-label="ページ切り替え">
+        <button id="previousPageButton" class="secondary" disabled>前のページ</button>
+        <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
+        <button id="nextPageButton" class="secondary" disabled>次のページ</button>
+      </div>
     </div>
   </header>
 
@@ -233,6 +252,9 @@
     const extractButton = document.querySelector('#extractButton');
     const clearButton = document.querySelector('#clearButton');
     const debugButton = document.querySelector('#debugButton');
+    const previousPageButton = document.querySelector('#previousPageButton');
+    const nextPageButton = document.querySelector('#nextPageButton');
+    const pageStatus = document.querySelector('#pageStatus');
     const placeholder = document.querySelector('#placeholder');
     const stage = document.querySelector('#stage');
     const pdfCanvas = document.querySelector('#pdfCanvas');
@@ -246,6 +268,7 @@
 
     let pdfDocument = null;
     let currentPage = null;
+    let currentPageNumber = 0;
     let currentViewport = null;
     let cachedPages = [];
     let isDebugVisible = false;
@@ -272,21 +295,18 @@
       pdfDocument = await pdfjsLib.getDocument({ data }).promise;
       cachedPages = await cacheAllTextItems(pdfDocument);
 
-      currentPage = await pdfDocument.getPage(1);
-      currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
-      await renderPage();
-      clearDrawing();
+      await showPage(1);
       placeholder.hidden = true;
       stage.hidden = false;
       extractButton.disabled = false;
       clearButton.disabled = false;
       debugButton.disabled = false;
-      result.value = 'まだ抽出されていません。';
-      result.textContent = result.value;
-      updateDetectedText();
+      updatePageControls();
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
+    nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
       isDebugVisible = !isDebugVisible;
       debugButton.setAttribute('aria-pressed', String(isDebugVisible));
@@ -341,10 +361,29 @@
       if (event.pointerId === drawingPointerId && event.buttons === 0) finishDrawing(event);
     });
 
+    function updatePageControls() {
+      const totalPages = pdfDocument ? pdfDocument.numPages : 0;
+      pageStatus.textContent = `${currentPageNumber || 0} / ${totalPages}`;
+      previousPageButton.disabled = !pdfDocument || currentPageNumber <= 1;
+      nextPageButton.disabled = !pdfDocument || currentPageNumber >= totalPages;
+    }
+
     function bestScaleForScreen(page) {
       const unscaled = page.getViewport({ scale: 1 });
       const availableWidth = Math.min(window.innerWidth - 48, 980);
       return Math.max(0.75, Math.min(1.75, availableWidth / unscaled.width));
+    }
+
+    async function showPage(pageNumber) {
+      if (!pdfDocument || pageNumber < 1 || pageNumber > pdfDocument.numPages) return;
+
+      currentPageNumber = pageNumber;
+      currentPage = await pdfDocument.getPage(pageNumber);
+      currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
+      await renderPage();
+      clearDrawing();
+      updateDetectedText();
+      updatePageControls();
     }
 
     async function renderPage() {
