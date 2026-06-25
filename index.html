@@ -55,7 +55,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
       gap: 1rem;
-      padding: .25rem clamp(1rem, 4vw, 2rem) 2rem;
+      padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
 
     .toolbar,
@@ -118,7 +118,7 @@
     .viewer-shell {
       min-height: 72vh;
       overflow: auto;
-      padding: .25rem 1rem 1rem;
+      padding: 0 1rem 1rem;
     }
 
     .page-stage {
@@ -150,7 +150,8 @@
 
     .placeholder {
       display: grid;
-      min-height: 60vh;
+      min-height: 0;
+      padding: .75rem 0;
       place-items: center;
       text-align: center;
       color: #5d677a;
@@ -202,7 +203,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V008</span>
+      <span class="version-badge" aria-label="バージョン">V009</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -219,8 +220,8 @@
   </header>
 
   <main>
-    <section class="viewer-shell" aria-label="PDF表示領域">
-      <div id="placeholder" class="placeholder">
+    <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
+      <div id="placeholder" class="placeholder" hidden>
         <div>
           <h2>PDFを選択してください</h2>
           <p class="hint">PDFを開いて、Apple Pencil・タッチ・マウスで文字を囲んでください。</p>
@@ -260,6 +261,7 @@
     const nextPageButton = document.querySelector('#nextPageButton');
     const pageStatus = document.querySelector('#pageStatus');
     const placeholder = document.querySelector('#placeholder');
+    const viewerShell = document.querySelector('#viewerShell');
     const stage = document.querySelector('#stage');
     const pdfCanvas = document.querySelector('#pdfCanvas');
     const drawCanvas = document.querySelector('#drawCanvas');
@@ -300,6 +302,7 @@
       cachedPages = await cacheAllTextItems(pdfDocument);
 
       await showPage(1);
+      viewerShell.hidden = false;
       placeholder.hidden = true;
       stage.hidden = false;
       extractButton.disabled = false;
@@ -399,13 +402,18 @@
         canvas.style.height = `${height}px`;
       });
 
-      drawContext.strokeStyle = '#0b63ce';
-      drawContext.lineWidth = 6;
-      drawContext.lineCap = 'round';
-      drawContext.lineJoin = 'round';
+      applyOutlineStyle();
 
       await currentPage.render({ canvasContext: pdfContext, viewport: currentViewport }).promise;
       redrawDebugOverlay();
+    }
+
+    function applyOutlineStyle() {
+      drawContext.strokeStyle = '#0b63ce';
+      drawContext.lineWidth = 2;
+      drawContext.lineCap = 'round';
+      drawContext.lineJoin = 'round';
+      drawContext.setLineDash([8, 6]);
     }
 
     async function cacheAllTextItems(pdf) {
@@ -548,6 +556,7 @@
       outlinePoints = [point];
       drawCanvas.setPointerCapture(pointerId);
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      applyOutlineStyle();
       drawContext.beginPath();
       drawContext.moveTo(point.x, point.y);
     }
@@ -598,6 +607,7 @@
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       if (outlinePoints.length === 0) return;
 
+      applyOutlineStyle();
       drawContext.beginPath();
       drawContext.moveTo(outlinePoints[0].x, outlinePoints[0].y);
       outlinePoints.slice(1).forEach((point) => {
