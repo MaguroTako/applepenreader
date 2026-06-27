@@ -209,7 +209,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V006</span>
+      <span class="version-badge" aria-label="バージョン">V007</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -243,7 +243,6 @@
     <aside class="result-panel">
       <div>
         <h2>抽出結果</h2>
-        <p class="hint">PDF読込時に先に保存したX/Y座標キーの文字情報から、囲み線内に含まれる座標を検索し、Setで重複を避け、同じX/Y座標に同じ文字が重なって登録された場合は1件にまとめてから、上から下へ1件ずつ改行表示します。囲み線を書き終えるたびに抽出結果へ追記し、抽出結果をリセットするまで残ります。囲み線は直近の1本を紫、それ以外を水色で表示します。座標は丸めず、PDF.jsから算出した表示座標をそのまま使います。</p>
       </div>
       <output id="result">まだ抽出されていません。</output>
       <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
