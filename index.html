@@ -53,7 +53,7 @@
 
     main {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+      grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
       gap: 1rem;
       padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
@@ -211,7 +211,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V008</span>
+      <span class="version-badge" aria-label="バージョン">V009</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -228,6 +228,20 @@
   </header>
 
   <main>
+    <aside class="result-panel" aria-label="抽出と検索パネル">
+      <div>
+        <h2>抽出結果</h2>
+      </div>
+      <output id="result">まだ抽出されていません。</output>
+      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
+      <div>
+        <h2>検出したテキスト</h2>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
+      </div>
+      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
+    </aside>
+
     <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
       <div id="placeholder" class="placeholder" hidden>
         <div>
@@ -241,20 +255,6 @@
         <canvas id="drawCanvas"></canvas>
       </div>
     </section>
-
-    <aside class="result-panel">
-      <div>
-        <h2>抽出結果</h2>
-      </div>
-      <output id="result">まだ抽出されていません。</output>
-      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
-      <div>
-        <h2>検出したテキスト</h2>
-        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
-      </div>
-      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
-      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
-    </aside>
   </main>
 
   <script type="module">
