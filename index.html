@@ -117,7 +117,7 @@
 
     .viewer-shell {
       min-height: 72vh;
-      overflow: auto;
+      overflow: hidden;
       padding: 0 1rem 1rem;
     }
 
@@ -125,7 +125,9 @@
       position: relative;
       width: fit-content;
       margin: 0 auto;
-      touch-action: pinch-zoom;
+      touch-action: none;
+      transform-origin: 0 0;
+      will-change: transform;
     }
 
     canvas {
@@ -138,6 +140,10 @@
     #drawCanvas {
       inset: 0;
       position: absolute;
+    }
+
+    #drawCanvas {
+      touch-action: none;
     }
 
     #debugCanvas {
@@ -203,7 +209,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V005</span>
+      <span class="version-badge" aria-label="バージョン">V006</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -224,7 +230,7 @@
       <div id="placeholder" class="placeholder" hidden>
         <div>
           <h2>PDFを選択してください</h2>
-          <p class="hint">PDFを開いて、Apple Pencil・タッチ・マウスで文字を囲んでください。</p>
+          <p class="hint">PDFを開いて、指で拡大縮小・移動し、Apple Pencilで文字を囲んでください。</p>
         </div>
       </div>
       <div id="stage" class="page-stage" hidden>
@@ -285,13 +291,15 @@
     let outlines = [];
     let activeOutline = null;
     let activePointers = new Map();
+    let touchPointers = new Map();
     let drawingPointerId = null;
-    let pendingTouchPointerId = null;
-    let pendingTouchStartPoint = null;
     let isDrawing = false;
-    let isGestureInProgress = false;
+    let viewScale = 1;
+    let viewTranslate = { x: 0, y: 0 };
+    let gestureState = null;
 
-    const touchDrawStartDistance = 8;
+    const minViewScale = 0.75;
+    const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
 
     pdfInput.addEventListener('change', async (event) => {
@@ -337,41 +345,42 @@
       if (!currentPage) return;
 
       activePointers.set(event.pointerId, event.pointerType);
-      if (activePointers.size > 1) {
-        cancelDrawingForGesture();
-        isGestureInProgress = true;
-        return;
-      }
-
-      if (isGestureInProgress) return;
 
       if (event.pointerType === 'touch') {
-        pendingTouchPointerId = event.pointerId;
-        pendingTouchStartPoint = eventPoint(event);
+        event.preventDefault();
+        cancelDrawing();
+        touchPointers.set(event.pointerId, screenPoint(event));
+        drawCanvas.setPointerCapture(event.pointerId);
+        startTouchGesture();
         return;
       }
 
+      if (!canDrawWithPointer(event)) return;
+      if (touchPointers.size > 0) return;
+
+      event.preventDefault();
       startDrawing(event.pointerId, eventPoint(event));
     });
 
     drawCanvas.addEventListener('pointermove', (event) => {
-      if (activePointers.size > 1 || isGestureInProgress) return;
-
-      const point = eventPoint(event);
-      if (event.pointerId === pendingTouchPointerId && !isDrawing) {
-        if (distanceBetween(point, pendingTouchStartPoint) < touchDrawStartDistance) return;
-        startDrawing(event.pointerId, pendingTouchStartPoint);
+      if (event.pointerType === 'touch') {
+        event.preventDefault();
+        if (!touchPointers.has(event.pointerId)) return;
+        touchPointers.set(event.pointerId, screenPoint(event));
+        updateTouchGesture();
+        return;
       }
 
       if (!isDrawing || event.pointerId !== drawingPointerId) return;
-      activeOutline.push(point);
+      event.preventDefault();
+      activeOutline.push(eventPoint(event));
       redrawOutline();
     });
 
-    drawCanvas.addEventListener('pointerup', finishDrawing);
-    drawCanvas.addEventListener('pointercancel', finishDrawing);
+    drawCanvas.addEventListener('pointerup', finishPointer);
+    drawCanvas.addEventListener('pointercancel', finishPointer);
     drawCanvas.addEventListener('pointerleave', (event) => {
-      if (event.pointerId === drawingPointerId && event.buttons === 0) finishDrawing(event);
+      if (event.pointerId === drawingPointerId && event.buttons === 0) finishPointer(event);
     });
 
     function updatePageControls() {
@@ -395,6 +404,7 @@
       currentViewport = currentPage.getViewport({ scale: bestScaleForScreen(currentPage) });
       await renderPage();
       clearDrawing();
+      resetViewTransform();
       updateDetectedText();
       updatePageControls();
     }
@@ -557,23 +567,35 @@
       };
     }
 
+    function screenPoint(event) {
+      const rect = viewerShell.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    }
+
+    function canDrawWithPointer(event) {
+      return event.pointerType === 'pen' || event.pointerType === 'mouse';
+    }
+
     function startDrawing(pointerId, point) {
       isDrawing = true;
       drawingPointerId = pointerId;
-      pendingTouchPointerId = null;
-      pendingTouchStartPoint = null;
       activeOutline = [point];
       drawCanvas.setPointerCapture(pointerId);
       redrawOutline();
     }
 
-    function finishDrawing(event) {
+    function finishPointer(event) {
       activePointers.delete(event.pointerId);
-      if (activePointers.size === 0) isGestureInProgress = false;
 
-      if (event.pointerId === pendingTouchPointerId) {
-        pendingTouchPointerId = null;
-        pendingTouchStartPoint = null;
+      if (event.pointerType === 'touch') {
+        touchPointers.delete(event.pointerId);
+        if (drawCanvas.hasPointerCapture(event.pointerId)) {
+          drawCanvas.releasePointerCapture(event.pointerId);
+        }
+        startTouchGesture();
         return;
       }
 
@@ -593,11 +615,9 @@
       redrawOutline();
     }
 
-    function cancelDrawingForGesture() {
+    function cancelDrawing() {
       const capturedPointerId = drawingPointerId;
-      pendingTouchPointerId = null;
-      pendingTouchStartPoint = null;
-      if (!isDrawing) return;
+      if (!isDrawing && !activeOutline) return;
 
       isDrawing = false;
       drawingPointerId = null;
@@ -608,8 +628,67 @@
       redrawOutline();
     }
 
+    function startTouchGesture() {
+      if (touchPointers.size === 0) {
+        gestureState = null;
+        return;
+      }
+
+      const points = [...touchPointers.values()];
+      gestureState = {
+        startPoints: points,
+        startScale: viewScale,
+        startTranslate: { ...viewTranslate },
+        center: averagePoint(points),
+        distance: points.length >= 2 ? distanceBetween(points[0], points[1]) : 0,
+      };
+    }
+
+    function updateTouchGesture() {
+      if (!gestureState || touchPointers.size === 0) return;
+
+      const points = [...touchPointers.values()];
+      const center = averagePoint(points);
+      const scale = points.length >= 2 && gestureState.distance > 0
+        ? clamp(gestureState.startScale * (distanceBetween(points[0], points[1]) / gestureState.distance), minViewScale, maxViewScale)
+        : gestureState.startScale;
+      const anchor = {
+        x: (gestureState.center.x - gestureState.startTranslate.x) / gestureState.startScale,
+        y: (gestureState.center.y - gestureState.startTranslate.y) / gestureState.startScale,
+      };
+
+      viewScale = scale;
+      viewTranslate = {
+        x: center.x - anchor.x * viewScale,
+        y: center.y - anchor.y * viewScale,
+      };
+      applyViewTransform();
+    }
+
+    function applyViewTransform() {
+      stage.style.transform = `translate(${viewTranslate.x}px, ${viewTranslate.y}px) scale(${viewScale})`;
+    }
+
+    function resetViewTransform() {
+      viewScale = 1;
+      viewTranslate = { x: 0, y: 0 };
+      gestureState = null;
+      applyViewTransform();
+    }
+
+    function averagePoint(points) {
+      return {
+        x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+        y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+      };
+    }
+
     function distanceBetween(pointA, pointB) {
       return Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
     }
 
     function redrawOutline() {
@@ -647,11 +726,10 @@
       outlines = [];
       activeOutline = null;
       activePointers.clear();
+      touchPointers.clear();
       drawingPointerId = null;
-      pendingTouchPointerId = null;
-      pendingTouchStartPoint = null;
       isDrawing = false;
-      isGestureInProgress = false;
+      gestureState = null;
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     }
 
