@@ -280,7 +280,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V016</span>
+      <span class="version-badge" aria-label="バージョン">V017</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -301,7 +301,7 @@
       <div>
         <h2>抽出結果</h2>
       </div>
-      <output id="result">まだ抽出されていません。</output>
+      <output id="result" role="list">まだ抽出されていません。</output>
       <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
       <div>
         <h2>検出したテキスト</h2>
@@ -314,7 +314,7 @@
       <div id="placeholder" class="placeholder" hidden>
         <div>
           <h2>PDFを選択してください</h2>
-          <p class="hint">PDFを開いて、指で拡大縮小・移動し、Apple Pencilで文字を囲んでください。</p>
+          <p class="hint">PDFを開いて、指で拡大縮小や移動をし、Apple Pencilで文字を囲んでください。</p>
         </div>
       </div>
       <div id="stage" class="page-stage" hidden>
@@ -324,7 +324,6 @@
       </div>
     </section>
   </main>
-
   <script type="module">
     import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 
@@ -951,13 +950,15 @@
       }
 
       extractedLines.forEach((line, index) => {
-        const row = document.createElement('span');
+        const row = document.createElement('div');
         row.className = 'result-line';
         row.draggable = true;
         row.dataset.resultLineIndex = String(index);
+        row.setAttribute('role', 'listitem');
 
-        const dragHandle = document.createElement('span');
+        const dragHandle = document.createElement('button');
         dragHandle.className = 'drag-result-line-handle';
+        dragHandle.type = 'button';
         dragHandle.setAttribute('aria-label', `この行をドラッグして移動: ${line}`);
         dragHandle.title = 'この行をドラッグして移動';
         dragHandle.textContent = '↕';
@@ -968,7 +969,7 @@
         deleteButton.dataset.resultLineIndex = String(index);
         deleteButton.setAttribute('aria-label', `この行を削除: ${line}`);
         deleteButton.title = 'この行を削除';
-        deleteButton.textContent = '🗑';
+        deleteButton.textContent = '🗑 削除';
 
         const lineText = document.createElement('span');
         lineText.className = 'result-line-text';
