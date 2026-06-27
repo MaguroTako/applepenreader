@@ -170,7 +170,8 @@
       align-self: start;
     }
 
-    #result {
+    #result,
+    #detectedText {
       white-space: pre-wrap;
       line-height: 1.65;
       border-radius: .75rem;
@@ -215,6 +216,11 @@
       white-space: pre-wrap;
     }
 
+    #detectedText {
+      max-height: 16rem;
+      overflow: auto;
+    }
+
     .hint {
       color: #5d677a;
       font-size: .95rem;
@@ -236,7 +242,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V011</span>
+      <span class="version-badge" aria-label="バージョン">V012</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -259,6 +265,12 @@
       </div>
       <output id="result">まだ抽出されていません。</output>
       <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
+      <div>
+        <h2>検出したテキスト</h2>
+        <p class="hint">表示中ページからPDF.jsが検出したテキストを、X/Y座標キーごとに1項目ずつ縦一列で確認できます。各テキストの横に、丸めていない登録キーX/Yも表示します。</p>
+      </div>
+      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
     </aside>
 
     <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
@@ -296,6 +308,8 @@
     const debugCanvas = document.querySelector('#debugCanvas');
     const result = document.querySelector('#result');
     const resetResultButton = document.querySelector('#resetResultButton');
+    const detectedText = document.querySelector('#detectedText');
+    const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -328,6 +342,7 @@
       const data = await file.arrayBuffer();
       result.value = 'PDF全体のテキストを先に抽出しています。';
       result.textContent = result.value;
+      setDetectedText('PDF全体のテキストを先に抽出しています。');
 
       pdfDocument = await pdfjsLib.getDocument({ data }).promise;
       cachedPages = await cacheAllTextItems(pdfDocument);
@@ -346,6 +361,7 @@
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', deleteExtractionResultLine);
+    resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
@@ -423,6 +439,7 @@
       await renderPage();
       clearDrawing();
       resetViewTransform();
+      updateDetectedText();
       updatePageControls();
     }
 
@@ -807,6 +824,25 @@
       });
     }
 
+    function updateDetectedText() {
+      if (!currentPage || !currentViewport) {
+        setDetectedText('PDFを読み込むと検出テキストを表示します。');
+        return;
+      }
+
+      const detected = joinItemsAsColumn(textItemsWithPlacementKeysForViewport(currentPage.pageNumber, currentViewport));
+      setDetectedText(detected || '表示中ページでテキストを検出できませんでした。');
+    }
+
+    function setDetectedText(text) {
+      detectedText.value = text;
+      detectedText.textContent = detectedText.value;
+    }
+
+    function resetDetectedText() {
+      setDetectedText('');
+    }
+
     function extractTextInsideOutline() {
       const allOutlines = [...outlines];
       if (activeOutline && activeOutline.length > 2) {
@@ -877,6 +913,28 @@
 
     function coordinateKey(point) {
       return `${point.x},${point.y}`;
+    }
+
+    function joinItemsAsColumn(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map(formatTextWithCoordinates)
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function joinItemsOneByOne(items) {
+      return [...items]
+        .sort((a, b) => a.center.y - b.center.y || a.rect.x1 - b.rect.x1)
+        .map((item) => item.text.trim())
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function formatTextWithCoordinates(item) {
+      const text = item.text.trim();
+      if (!text) return '';
+      return `${text}  X:${item.point.x} Y:${item.point.y}`;
     }
 
     function joinItemsByRows(items) {
