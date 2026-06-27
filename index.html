@@ -242,7 +242,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V012</span>
+      <span class="version-badge" aria-label="バージョン">V013</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -796,7 +796,7 @@
 
     function renderExtractionResult() {
       result.textContent = '';
-      result.value = extractedLines.join('\n');
+      result.value = '';
 
       if (extractedLines.length === 0) {
         result.textContent = defaultResultText;
