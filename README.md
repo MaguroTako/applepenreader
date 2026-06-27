@@ -12,7 +12,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Lets the user draw a thin dashed closed outline around text.
 - Uses finger touch for page pan and pinch-zoom without creating outline lines; outline drawing is reserved for Apple Pencil, with mouse input kept as a desktop fallback.
 - Registers positioned text fragments in a coordinate map keyed by their unrounded X/Y placement points, ignores duplicate text fragments that share the same coordinate key and text, then uses a `Set` of hit coordinate keys during outline extraction so duplicate hits are not emitted.
-- Places the extraction result and detected-text/search reference panel on the left, while keeping the PDF viewer on the right for side-by-side iPad use.
+- Places the expanded extraction result and detected-text/search reference panel on the left, while keeping the PDF viewer on the right for side-by-side iPad use.
 - Shows the text detected on the visible PDF page below the extraction result as a single vertical column of coordinate-keyed fragments, with each fragment's unrounded registered X/Y key beside the text.
 - Overwrites the detected-text panel whenever the visible page text is refreshed, with a reset button for clearing it manually.
 - Appends extracted text to the extraction result whenever an outline loop is completed, until the result reset button is pressed.
@@ -40,7 +40,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 4. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
 5. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
 6. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
-7. Check **検出したテキスト** below the extraction result if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
+7. Check **検出したテキスト** below the expanded extraction result if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
 8. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
 9. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
 10. Tap the trash icon beside an extracted line when you want to remove only that line.
