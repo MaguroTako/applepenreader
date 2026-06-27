@@ -181,8 +181,39 @@
 
     #result {
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
       height: 12rem;
       overflow: auto;
+      white-space: normal;
+    }
+
+    .result-line {
+      align-items: flex-start;
+      display: grid;
+      gap: .5rem;
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .delete-result-line-button {
+      align-items: center;
+      background: #fee2e2;
+      border-radius: .5rem;
+      color: #991b1b;
+      display: inline-flex;
+      font-size: 1rem;
+      justify-content: center;
+      line-height: 1;
+      min-height: 2rem;
+      min-width: 2rem;
+      padding: .35rem;
+    }
+
+    .result-line-text {
+      overflow-wrap: anywhere;
+      padding-top: .12rem;
+      white-space: pre-wrap;
     }
 
     #detectedText {
@@ -211,7 +242,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V009</span>
+      <span class="version-badge" aria-label="バージョン">V010</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -298,6 +329,7 @@
     let viewScale = 1;
     let viewTranslate = { x: 0, y: 0 };
     let gestureState = null;
+    let extractedLines = [];
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -328,6 +360,7 @@
 
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
+    result.addEventListener('click', deleteExtractionResultLine);
     resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
@@ -735,19 +768,60 @@
     }
 
     function resetExtractionResult() {
-      result.value = defaultResultText;
-      result.textContent = result.value;
+      extractedLines = [];
+      renderExtractionResult();
     }
 
     function appendExtractionResult(text) {
-      const extracted = text.trim();
-      if (!extracted) return;
+      const newLines = text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (newLines.length === 0) return;
 
-      const current = result.value.trim();
-      result.value = !current || current === defaultResultText
-        ? extracted
-        : `${result.value}\n${extracted}`;
-      result.textContent = result.value;
+      extractedLines.push(...newLines);
+      renderExtractionResult();
+    }
+
+    function deleteExtractionResultLine(event) {
+      const deleteButton = event.target.closest('.delete-result-line-button');
+      if (!deleteButton) return;
+
+      const index = Number(deleteButton.dataset.resultLineIndex);
+      if (!Number.isInteger(index) || index < 0 || index >= extractedLines.length) return;
+
+      extractedLines.splice(index, 1);
+      renderExtractionResult();
+    }
+
+    function renderExtractionResult() {
+      result.textContent = '';
+      result.value = extractedLines.join('\n');
+
+      if (extractedLines.length === 0) {
+        result.textContent = defaultResultText;
+        return;
+      }
+
+      extractedLines.forEach((line, index) => {
+        const row = document.createElement('span');
+        row.className = 'result-line';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-result-line-button';
+        deleteButton.type = 'button';
+        deleteButton.dataset.resultLineIndex = String(index);
+        deleteButton.setAttribute('aria-label', `この行を削除: ${line}`);
+        deleteButton.title = 'この行を削除';
+        deleteButton.textContent = '🗑';
+
+        const lineText = document.createElement('span');
+        lineText.className = 'result-line-text';
+        lineText.textContent = line;
+
+        row.append(deleteButton, lineText);
+        result.append(row);
+      });
     }
 
     function updateDetectedText() {
