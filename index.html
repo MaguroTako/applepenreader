@@ -269,7 +269,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V018</span>
+      <span class="version-badge" aria-label="バージョン">V019</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -935,7 +935,7 @@
         deleteButton.dataset.resultLineIndex = String(index);
         deleteButton.setAttribute('aria-label', `この行を削除: ${line}`);
         deleteButton.title = 'この行を削除';
-        deleteButton.textContent = '🗑 削除';
+        deleteButton.textContent = '🗑';
 
         const lineText = document.createElement('span');
         lineText.className = 'result-line-text';
