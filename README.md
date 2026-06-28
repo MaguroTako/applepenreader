@@ -16,7 +16,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Shows the text detected on the visible PDF page below the extraction result as a single vertical column of coordinate-keyed fragments, with each fragment's unrounded registered X/Y key beside the text.
 - Overwrites the detected-text panel whenever the visible page text is refreshed, with a reset button for clearing it manually.
 - Appends extracted text to the extraction result whenever an outline loop is completed, until the result reset button is pressed.
-- Shows a visible trash button to the left of each extracted-text row so individual rows can be removed.
+- Shows a `↕` drag handle and a visible trash button to the left of each extracted-text row so individual rows can be reordered or removed.
 - Shows each extracted text fragment as its own row, ordered from top to bottom.
 - Shows an optional debug overlay for text fragment rectangles and center points.
 - Lists extracted fragments one per row in Y/X order.
@@ -43,10 +43,11 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 7. Check **検出したテキスト** below the expanded extraction result if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
 8. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
 9. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
-10. Tap **🗑 削除** beside an extracted row when you want to remove only that row.
-11. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
-12. Tap **囲み文字を抽出** if you want to append extraction for the current outlines manually.
-13. Tap **囲み線を消す** to clear every outline.
+10. Drag the `↕` handle beside an extracted row when you want to move it.
+11. Tap **🗑 削除** beside an extracted row when you want to remove only that row.
+12. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
+13. Tap **囲み文字を抽出** if you want to append extraction for the current outlines manually.
+14. Tap **囲み線を消す** to clear every outline.
 
 ## Implementation notes
 

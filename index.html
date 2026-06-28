@@ -193,7 +193,34 @@
       align-items: flex-start;
       display: grid;
       gap: .5rem;
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: auto auto minmax(0, 1fr);
+      padding: .1rem 0;
+    }
+
+    .drag-result-line-handle {
+      align-items: center;
+      background: #e7eefb;
+      border-radius: .5rem;
+      color: #0b3c7d;
+      display: inline-flex;
+      font-size: 1rem;
+      justify-content: center;
+      line-height: 1;
+      min-height: 2rem;
+      min-width: 2rem;
+      padding: .35rem;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .result-line.dragging {
+      opacity: .5;
+    }
+
+    .result-line.drag-over {
+      outline: 2px solid #0b63ce;
+      outline-offset: 2px;
+      border-radius: .5rem;
     }
 
     .delete-result-line-button {
@@ -242,7 +269,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V017</span>
+      <span class="version-badge" aria-label="バージョン">V018</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -330,6 +357,7 @@
     let gestureState = null;
     let extractedLines = [];
     let extractedOutlineCount = 0;
+    let activeResultDrag = null;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -361,6 +389,10 @@
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', deleteExtractionResultLine);
+    result.addEventListener('pointerdown', startResultLinePointerDrag);
+    result.addEventListener('pointermove', updateResultLinePointerDrag);
+    result.addEventListener('pointerup', finishResultLinePointerDrag);
+    result.addEventListener('pointercancel', cancelResultLinePointerDrag);
     resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
@@ -806,6 +838,75 @@
       renderExtractionResult();
     }
 
+    function startResultLinePointerDrag(event) {
+      const handle = event.target.closest('.drag-result-line-handle');
+      if (!handle) return;
+
+      const row = handle.closest('.result-line');
+      if (!row) return;
+
+      event.preventDefault();
+      handle.setPointerCapture(event.pointerId);
+      activeResultDrag = {
+        pointerId: event.pointerId,
+        fromIndex: Number(row.dataset.resultLineIndex),
+      };
+      row.classList.add('dragging');
+    }
+
+    function updateResultLinePointerDrag(event) {
+      if (!activeResultDrag || activeResultDrag.pointerId !== event.pointerId) return;
+
+      clearResultLineDropState();
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('.result-line');
+      if (targetRow) {
+        targetRow.classList.add('drag-over');
+      }
+    }
+
+    function finishResultLinePointerDrag(event) {
+      if (!activeResultDrag || activeResultDrag.pointerId !== event.pointerId) return;
+
+      const handle = event.target.closest('.drag-result-line-handle');
+      if (handle && handle.hasPointerCapture(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+
+      const targetRow = document.elementFromPoint(event.clientX, event.clientY)?.closest('.result-line');
+      const toIndex = targetRow ? Number(targetRow.dataset.resultLineIndex) : activeResultDrag.fromIndex;
+      moveExtractionLine(activeResultDrag.fromIndex, toIndex);
+      activeResultDrag = null;
+      clearResultLineDropState();
+    }
+
+    function cancelResultLinePointerDrag(event) {
+      if (!activeResultDrag || activeResultDrag.pointerId !== event.pointerId) return;
+
+      const handle = event.target.closest('.drag-result-line-handle');
+      if (handle && handle.hasPointerCapture(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+
+      activeResultDrag = null;
+      clearResultLineDropState();
+    }
+
+    function clearResultLineDropState() {
+      result.querySelectorAll('.dragging, .drag-over').forEach((row) => {
+        row.classList.remove('dragging', 'drag-over');
+      });
+    }
+
+    function moveExtractionLine(fromIndex, toIndex) {
+      if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return;
+      if (fromIndex < 0 || fromIndex >= extractedLines.length || toIndex < 0 || toIndex >= extractedLines.length) return;
+      if (fromIndex === toIndex) return;
+
+      const [movedLine] = extractedLines.splice(fromIndex, 1);
+      extractedLines.splice(toIndex, 0, movedLine);
+      renderExtractionResult();
+    }
+
     function renderExtractionResult() {
       result.textContent = '';
       result.dataset.extractedText = '';
@@ -819,6 +920,14 @@
         const row = document.createElement('div');
         row.className = 'result-line';
         row.setAttribute('role', 'listitem');
+        row.dataset.resultLineIndex = String(index);
+
+        const dragHandle = document.createElement('button');
+        dragHandle.className = 'drag-result-line-handle';
+        dragHandle.type = 'button';
+        dragHandle.textContent = '↕';
+        dragHandle.setAttribute('aria-label', `この行をドラッグして移動: ${line}`);
+        dragHandle.title = 'この行をドラッグして移動';
 
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-result-line-button';
@@ -832,7 +941,7 @@
         lineText.className = 'result-line-text';
         lineText.textContent = line;
 
-        row.append(deleteButton, lineText);
+        row.append(dragHandle, deleteButton, lineText);
         result.append(row);
       });
       result.dataset.extractedText = extractedLines.join('\n');
