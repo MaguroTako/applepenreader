@@ -242,7 +242,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V016</span>
+      <span class="version-badge" aria-label="バージョン">V017</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -808,7 +808,7 @@
 
     function renderExtractionResult() {
       result.textContent = '';
-      result.value = '';
+      result.dataset.extractedText = '';
 
       if (extractedLines.length === 0) {
         result.textContent = defaultResultText;
@@ -835,7 +835,7 @@
         row.append(deleteButton, lineText);
         result.append(row);
       });
-      result.value = extractedLines.join('\n');
+      result.dataset.extractedText = extractedLines.join('\n');
     }
 
     function updateDetectedText() {
@@ -880,7 +880,7 @@
       });
 
       const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
-      return joinItemsByRows(matchedItems);
+      return joinItemsOneByOne(matchedItems);
     }
 
 

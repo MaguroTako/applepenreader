@@ -17,9 +17,9 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Overwrites the detected-text panel whenever the visible page text is refreshed, with a reset button for clearing it manually.
 - Appends extracted text to the extraction result whenever an outline loop is completed, until the result reset button is pressed.
 - Shows a visible trash button to the left of each extracted-text row so individual rows can be removed.
-- Shows extracted text as separate rows, preserving PDF line grouping where possible.
+- Shows each extracted text fragment as its own row, ordered from top to bottom.
 - Shows an optional debug overlay for text fragment rectangles and center points.
-- Groups extracted fragments into rows using PDF.js line-end information and nearby Y coordinates, then joins each row in X order.
+- Lists extracted fragments one per row in Y/X order.
 
 ## Requirements
 
