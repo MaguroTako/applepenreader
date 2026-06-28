@@ -254,6 +254,15 @@
       white-space: pre-wrap;
     }
 
+    .result-line-text[readonly] {
+      cursor: pointer;
+    }
+
+    .result-line-text:not([readonly]) {
+      background: #fff7ed;
+      border-color: #f97316;
+    }
+
     .result-line-text:focus {
       border-color: #0b63ce;
       box-shadow: 0 0 0 3px rgb(11 99 206 / 18%);
@@ -286,7 +295,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V020</span>
+      <span class="version-badge" aria-label="バージョン">V021</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -375,6 +384,7 @@
     let extractedLines = [];
     let extractedOutlineCount = 0;
     let activeResultDrag = null;
+    let lastResultLineTap = null;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -406,10 +416,11 @@
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', deleteExtractionResultLine);
+    result.addEventListener('dblclick', enableExtractionResultLineEditing);
     result.addEventListener('input', updateExtractionResultLine);
     result.addEventListener('pointerdown', startResultLinePointerDrag);
     result.addEventListener('pointermove', updateResultLinePointerDrag);
-    result.addEventListener('pointerup', finishResultLinePointerDrag);
+    result.addEventListener('pointerup', handleResultLinePointerUp);
     result.addEventListener('pointercancel', cancelResultLinePointerDrag);
     resetDetectedTextButton.addEventListener('click', resetDetectedText);
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
@@ -856,6 +867,47 @@
       renderExtractionResult();
     }
 
+    function enableExtractionResultLineEditing(event) {
+      const lineText = event.target.closest('.result-line-text');
+      if (!lineText) return;
+
+      setExtractionResultLineEditing(lineText);
+    }
+
+    function enableExtractionResultLineEditingOnDoubleTap(event) {
+      const lineText = event.target.closest('.result-line-text');
+      if (!lineText || event.pointerType === 'mouse') return;
+
+      const now = Date.now();
+      const lineIndex = lineText.dataset.resultLineIndex;
+      const isDoubleTap = lastResultLineTap
+        && lastResultLineTap.lineIndex === lineIndex
+        && now - lastResultLineTap.time < 450
+        && distanceBetween(lastResultLineTap.point, { x: event.clientX, y: event.clientY }) < 30;
+
+      lastResultLineTap = {
+        lineIndex,
+        point: { x: event.clientX, y: event.clientY },
+        time: now,
+      };
+
+      if (isDoubleTap) {
+        event.preventDefault();
+        setExtractionResultLineEditing(lineText);
+      }
+    }
+
+    function setExtractionResultLineEditing(lineText) {
+      lineText.readOnly = false;
+      lineText.focus();
+      lineText.setSelectionRange(lineText.value.length, lineText.value.length);
+      resizeResultLineText(lineText);
+    }
+
+    function disableExtractionResultLineEditing(event) {
+      event.currentTarget.readOnly = true;
+    }
+
     function updateExtractionResultLine(event) {
       const lineText = event.target.closest('.result-line-text');
       if (!lineText) return;
@@ -897,6 +949,11 @@
       if (targetRow) {
         targetRow.classList.add('drag-over');
       }
+    }
+
+    function handleResultLinePointerUp(event) {
+      finishResultLinePointerDrag(event);
+      enableExtractionResultLineEditingOnDoubleTap(event);
     }
 
     function finishResultLinePointerDrag(event) {
@@ -977,8 +1034,11 @@
         lineText.dataset.resultLineIndex = String(index);
         lineText.rows = 1;
         lineText.value = line;
-        lineText.setAttribute('aria-label', `抽出結果の${index + 1}行目を修正`);
+        lineText.readOnly = true;
+        lineText.setAttribute('aria-label', `抽出結果の${index + 1}行目。ダブルタップで修正`);
+        lineText.title = 'ダブルタップで編集';
         lineText.addEventListener('focus', () => resizeResultLineText(lineText));
+        lineText.addEventListener('blur', disableExtractionResultLineEditing);
         lineText.addEventListener('input', () => resizeResultLineText(lineText));
         requestAnimationFrame(() => resizeResultLineText(lineText));
 
