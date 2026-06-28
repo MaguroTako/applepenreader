@@ -238,9 +238,26 @@
     }
 
     .result-line-text {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: .5rem;
+      box-sizing: border-box;
+      color: inherit;
+      font: inherit;
+      line-height: 1.5;
+      min-height: 2.25rem;
+      overflow: hidden;
       overflow-wrap: anywhere;
-      padding-top: .12rem;
+      padding: .35rem .5rem;
+      resize: none;
+      width: 100%;
       white-space: pre-wrap;
+    }
+
+    .result-line-text:focus {
+      border-color: #0b63ce;
+      box-shadow: 0 0 0 3px rgb(11 99 206 / 18%);
+      outline: none;
     }
 
     #detectedText {
@@ -269,7 +286,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V019</span>
+      <span class="version-badge" aria-label="バージョン">V020</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -389,6 +406,7 @@
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', deleteExtractionResultLine);
+    result.addEventListener('input', updateExtractionResultLine);
     result.addEventListener('pointerdown', startResultLinePointerDrag);
     result.addEventListener('pointermove', updateResultLinePointerDrag);
     result.addEventListener('pointerup', finishResultLinePointerDrag);
@@ -838,6 +856,23 @@
       renderExtractionResult();
     }
 
+    function updateExtractionResultLine(event) {
+      const lineText = event.target.closest('.result-line-text');
+      if (!lineText) return;
+
+      const index = Number(lineText.dataset.resultLineIndex);
+      if (!Number.isInteger(index) || index < 0 || index >= extractedLines.length) return;
+
+      extractedLines[index] = lineText.value;
+      result.dataset.extractedText = extractedLines.filter((line) => line.trim()).join('\n');
+      resizeResultLineText(lineText);
+    }
+
+    function resizeResultLineText(lineText) {
+      lineText.style.height = 'auto';
+      lineText.style.height = `${lineText.scrollHeight}px`;
+    }
+
     function startResultLinePointerDrag(event) {
       const handle = event.target.closest('.drag-result-line-handle');
       if (!handle) return;
@@ -937,9 +972,15 @@
         deleteButton.title = 'この行を削除';
         deleteButton.textContent = '🗑';
 
-        const lineText = document.createElement('span');
+        const lineText = document.createElement('textarea');
         lineText.className = 'result-line-text';
-        lineText.textContent = line;
+        lineText.dataset.resultLineIndex = String(index);
+        lineText.rows = 1;
+        lineText.value = line;
+        lineText.setAttribute('aria-label', `抽出結果の${index + 1}行目を修正`);
+        lineText.addEventListener('focus', () => resizeResultLineText(lineText));
+        lineText.addEventListener('input', () => resizeResultLineText(lineText));
+        requestAnimationFrame(() => resizeResultLineText(lineText));
 
         row.append(dragHandle, deleteButton, lineText);
         result.append(row);
