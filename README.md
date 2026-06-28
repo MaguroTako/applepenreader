@@ -16,8 +16,8 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 - Shows the text detected on the visible PDF page below the extraction result as a single vertical column of coordinate-keyed fragments, with each fragment's unrounded registered X/Y key beside the text.
 - Overwrites the detected-text panel whenever the visible page text is refreshed, with a reset button for clearing it manually.
 - Appends extracted text to the extraction result whenever an outline loop is completed, until the result reset button is pressed.
-- Shows a trash button to the left of each extracted-text line so individual lines can be removed.
-- Shows each extracted text item on its own line, ordered from top to bottom.
+- Shows a visible trash button to the left of each extracted-text row so individual rows can be removed.
+- Shows extracted text as separate rows, preserving PDF line grouping where possible.
 - Shows an optional debug overlay for text fragment rectangles and center points.
 - Groups extracted fragments into rows using PDF.js line-end information and nearby Y coordinates, then joins each row in X order.
 
@@ -43,7 +43,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 7. Check **検出したテキスト** below the expanded extraction result if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
 8. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
 9. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
-10. Tap the trash icon beside an extracted line when you want to remove only that line.
+10. Tap **🗑 削除** beside an extracted row when you want to remove only that row.
 11. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
 12. Tap **囲み文字を抽出** if you want to append extraction for the current outlines manually.
 13. Tap **囲み線を消す** to clear every outline.

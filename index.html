@@ -242,7 +242,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V015</span>
+      <span class="version-badge" aria-label="バージョン">V016</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -263,7 +263,7 @@
       <div>
         <h2>抽出結果</h2>
       </div>
-      <output id="result">まだ抽出されていません。</output>
+      <output id="result" role="list">まだ抽出されていません。</output>
       <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
       <div>
         <h2>検出したテキスト</h2>
@@ -329,6 +329,7 @@
     let viewTranslate = { x: 0, y: 0 };
     let gestureState = null;
     let extractedLines = [];
+    let extractedOutlineCount = 0;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -370,8 +371,7 @@
       redrawDebugOverlay();
     });
     extractButton.addEventListener('click', () => {
-      const extracted = extractTextInsideOutline();
-      appendExtractionResult(extracted);
+      appendUnextractedOutlines();
     });
 
     drawCanvas.addEventListener('pointerdown', (event) => {
@@ -643,6 +643,7 @@
         const completedOutline = [...activeOutline];
         outlines.push(completedOutline);
         appendExtractionResult(extractTextInsideOutlines([completedOutline]));
+        extractedOutlineCount = outlines.length;
       }
       activeOutline = null;
       redrawOutline();
@@ -757,6 +758,7 @@
 
     function clearDrawing() {
       outlines = [];
+      extractedOutlineCount = 0;
       activeOutline = null;
       activePointers.clear();
       touchPointers.clear();
@@ -768,6 +770,7 @@
 
     function resetExtractionResult() {
       extractedLines = [];
+      extractedOutlineCount = 0;
       renderExtractionResult();
     }
 
@@ -780,6 +783,16 @@
 
       extractedLines.push(...newLines);
       renderExtractionResult();
+    }
+
+    function appendUnextractedOutlines() {
+      const pendingOutlines = outlines.slice(extractedOutlineCount);
+      if (activeOutline && activeOutline.length > 2) {
+        pendingOutlines.push(activeOutline);
+      }
+
+      appendExtractionResult(extractTextInsideOutlines(pendingOutlines));
+      extractedOutlineCount = outlines.length;
     }
 
     function deleteExtractionResultLine(event) {
@@ -803,8 +816,9 @@
       }
 
       extractedLines.forEach((line, index) => {
-        const row = document.createElement('span');
+        const row = document.createElement('div');
         row.className = 'result-line';
+        row.setAttribute('role', 'listitem');
 
         const deleteButton = document.createElement('button');
         deleteButton.className = 'delete-result-line-button';
@@ -812,7 +826,7 @@
         deleteButton.dataset.resultLineIndex = String(index);
         deleteButton.setAttribute('aria-label', `この行を削除: ${line}`);
         deleteButton.title = 'この行を削除';
-        deleteButton.textContent = '🗑';
+        deleteButton.textContent = '🗑 削除';
 
         const lineText = document.createElement('span');
         lineText.className = 'result-line-text';
@@ -821,6 +835,7 @@
         row.append(deleteButton, lineText);
         result.append(row);
       });
+      result.value = extractedLines.join('\n');
     }
 
     function updateDetectedText() {
@@ -865,7 +880,7 @@
       });
 
       const matchedItems = [...hitKeys].map((key) => textItemsByPoint.get(key));
-      return joinItemsOneByOne(matchedItems);
+      return joinItemsByRows(matchedItems);
     }
 
 
