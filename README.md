@@ -5,7 +5,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## What it does
 
 - Opens a local PDF from a browser file input inside the PDF tab.
-- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries, and highlights the touched cell with a red border while restoring the previous cell border.
+- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries, highlights the touched cell with a red border while restoring the previous cell border, and copies a tapped extraction-result row into the selected red-bordered cell.
 - Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the selected page with PDF.js inside a PDF tab that also contains the file input, extraction controls, debug toggle, previous/next page navigation, and a current-page/total-page count.
 - Places a transparent drawing canvas above the PDF page.
@@ -45,7 +45,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 8. Check **検出したテキスト** in the always-visible left panel if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
 9. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
 10. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
-11. Double-tap an extracted row and edit the text when OCR/PDF extraction needs correction. Editing locks again when the row loses focus.
+11. Tap an extracted row after selecting a red-bordered wiring-list cell to copy that extracted text into the cell. Double-tap an extracted row and edit the text when OCR/PDF extraction needs correction. Editing locks again when the row loses focus.
 12. Drag the `↕` handle beside an extracted row when you want to move it.
 13. Tap the `🗑` button beside an extracted row when you want to remove only that row.
 14. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
