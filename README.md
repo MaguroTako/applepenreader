@@ -5,6 +5,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## What it does
 
 - Opens a local PDF from a browser file input inside the PDF tab.
+- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries.
 - Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the selected page with PDF.js inside a PDF tab that also contains the file input, extraction controls, debug toggle, previous/next page navigation, and a current-page/total-page count.
 - Places a transparent drawing canvas above the PDF page.
@@ -37,18 +38,19 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 2. Open `http://localhost:8000/` in a browser.
 3. Open the **PDF** tab, tap **ファイルを選択**, and choose a PDF.
-4. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
-5. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
-6. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
-7. Check **検出したテキスト** in the always-visible left panel if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
-8. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
-9. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
-10. Double-tap an extracted row and edit the text when OCR/PDF extraction needs correction. Editing locks again when the row loses focus.
-11. Drag the `↕` handle beside an extracted row when you want to move it.
-12. Tap the `🗑` button beside an extracted row when you want to remove only that row.
-13. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
-14. Tap **囲み文字を抽出** if you want to append extraction for the current outlines manually.
-15. Tap **囲み線を消す** to clear every outline.
+4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table.
+5. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
+6. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
+7. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
+8. Check **検出したテキスト** in the always-visible left panel if you want to confirm all text fragments found on the visible page in one vertical column with unrounded placement X/Y points beside each text item.
+9. Tap **検出テキストを消す** if you want to clear the detected-text panel manually.
+10. Finish drawing an outline and confirm the extracted text is appended to the extraction result automatically.
+11. Double-tap an extracted row and edit the text when OCR/PDF extraction needs correction. Editing locks again when the row loses focus.
+12. Drag the `↕` handle beside an extracted row when you want to move it.
+13. Tap the `🗑` button beside an extracted row when you want to remove only that row.
+14. Tap **抽出結果をリセット** when you want to clear the accumulated extraction result.
+15. Tap **囲み文字を抽出** if you want to append extraction for the current outlines manually.
+16. Tap **囲み線を消す** to clear every outline.
 
 ## Implementation notes
 
