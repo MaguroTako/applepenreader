@@ -139,7 +139,15 @@
 
     .wiring-table td {
       background: #ffffff;
+      cursor: pointer;
       height: 2.25rem;
+    }
+
+    .wiring-table td.selected-wiring-cell {
+      border-color: #dc2626;
+      box-shadow: inset 0 0 0 2px #dc2626;
+      position: relative;
+      z-index: 1;
     }
 
     .pdf-tab-toolbar,
@@ -406,7 +414,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V029</span>
+      <span class="version-badge" aria-label="バージョン">V030</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1109,6 +1117,7 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
+    const wiringTable = document.querySelector('.wiring-table');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -1132,12 +1141,37 @@
     let extractedOutlineCount = 0;
     let activeResultDrag = null;
     let lastResultLineTap = null;
+    let selectedWiringCell = null;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
 
     tabButtons.forEach((button) => button.addEventListener('click', () => selectTab(button)));
+    wiringTable.addEventListener('click', selectWiringCell);
+    wiringTable.querySelectorAll('td').forEach((cell) => {
+      cell.tabIndex = 0;
+      cell.addEventListener('keydown', selectWiringCellWithKeyboard);
+    });
+
+    function selectWiringCell(event) {
+      const cell = event.target.closest('td');
+      if (!cell || !wiringTable.contains(cell)) return;
+
+      if (selectedWiringCell && selectedWiringCell !== cell) {
+        selectedWiringCell.classList.remove('selected-wiring-cell');
+      }
+
+      selectedWiringCell = cell;
+      selectedWiringCell.classList.add('selected-wiring-cell');
+    }
+
+    function selectWiringCellWithKeyboard(event) {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+
+      event.preventDefault();
+      selectWiringCell(event);
+    }
 
     function selectTab(selectedButton) {
       tabButtons.forEach((button) => {
