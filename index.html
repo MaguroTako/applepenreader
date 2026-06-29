@@ -52,6 +52,9 @@
     }
 
     main {
+      display: grid;
+      grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+      gap: 1rem;
       padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
 
@@ -335,16 +338,15 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V025</span>
+      <span class="version-badge" aria-label="バージョン">V026</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
 
   <main>
-    <div class="tabs">
-      <div class="tab-list" role="tablist" aria-label="表示切り替え">
-        <button id="pdfTabButton" class="tab-button" type="button" role="tab" aria-selected="true" aria-controls="pdfTab">PDF</button>
-        <button id="resultTabButton" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="resultTab">抽出結果</button>
+    <aside class="result-panel" aria-label="抽出と検索パネル">
+      <div>
+        <h2>抽出結果</h2>
       </div>
       <output id="result" role="list">まだ抽出されていません。</output>
       <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
@@ -397,10 +399,6 @@
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 
-    const pdfTabButton = document.querySelector('#pdfTabButton');
-    const resultTabButton = document.querySelector('#resultTabButton');
-    const pdfTab = document.querySelector('#pdfTab');
-    const resultTab = document.querySelector('#resultTab');
     const pdfInput = document.querySelector('#pdfInput');
     const extractButton = document.querySelector('#extractButton');
     const clearButton = document.querySelector('#clearButton');
@@ -446,8 +444,6 @@
     const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
 
-    pdfTabButton.addEventListener('click', () => selectTab('pdf'));
-    resultTabButton.addEventListener('click', () => selectTab('result'));
 
     pdfInput.addEventListener('change', async (event) => {
       const [file] = event.target.files;
@@ -535,14 +531,6 @@
     drawCanvas.addEventListener('pointerleave', (event) => {
       if (event.pointerId === drawingPointerId && event.buttons === 0) finishPointer(event);
     });
-
-    function selectTab(selectedTab) {
-      const showPdfTab = selectedTab === 'pdf';
-      pdfTab.hidden = !showPdfTab;
-      resultTab.hidden = showPdfTab;
-      pdfTabButton.setAttribute('aria-selected', String(showPdfTab));
-      resultTabButton.setAttribute('aria-selected', String(!showPdfTab));
-    }
 
     function updatePageControls() {
       const totalPages = pdfDocument ? pdfDocument.numPages : 0;
