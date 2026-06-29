@@ -414,7 +414,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V030</span>
+      <span class="version-badge" aria-label="バージョン">V031</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -473,7 +473,7 @@
         <div class="wiring-list-panel">
           <div>
             <h2>配線リスト</h2>
-            <p class="hint">4列100行の配線情報を確認するための一覧です。</p>
+            <p class="hint">4列100行の配線情報を確認するための一覧です。赤枠のセルを選んだあと、抽出結果のテキストをタッチするとセルへ転記できます。</p>
           </div>
           <div class="wiring-table-wrap">
             <table class="wiring-table" aria-label="配線リスト 4列100行">
@@ -1207,7 +1207,7 @@
 
     clearButton.addEventListener('click', clearDrawing);
     resetResultButton.addEventListener('click', resetExtractionResult);
-    result.addEventListener('click', deleteExtractionResultLine);
+    result.addEventListener('click', handleExtractionResultClick);
     result.addEventListener('dblclick', enableExtractionResultLineEditing);
     result.addEventListener('input', updateExtractionResultLine);
     result.addEventListener('pointerdown', startResultLinePointerDrag);
@@ -1648,15 +1648,28 @@
       extractedOutlineCount = outlines.length;
     }
 
+    function handleExtractionResultClick(event) {
+      if (deleteExtractionResultLine(event)) return;
+      copyExtractionResultLineToSelectedWiringCell(event);
+    }
+
     function deleteExtractionResultLine(event) {
       const deleteButton = event.target.closest('.delete-result-line-button');
-      if (!deleteButton) return;
+      if (!deleteButton) return false;
 
       const index = Number(deleteButton.dataset.resultLineIndex);
-      if (!Number.isInteger(index) || index < 0 || index >= extractedLines.length) return;
+      if (!Number.isInteger(index) || index < 0 || index >= extractedLines.length) return true;
 
       extractedLines.splice(index, 1);
       renderExtractionResult();
+      return true;
+    }
+
+    function copyExtractionResultLineToSelectedWiringCell(event) {
+      const lineText = event.target.closest('.result-line-text');
+      if (!lineText || !selectedWiringCell) return;
+
+      selectedWiringCell.textContent = lineText.value.trim();
     }
 
     function enableExtractionResultLineEditing(event) {
