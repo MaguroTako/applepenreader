@@ -414,7 +414,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V033</span>
+      <span class="version-badge" aria-label="バージョン">V034</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1539,7 +1539,8 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
-    const wiringTable = document.querySelector('.wiring-table');
+    const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
+    const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -2091,7 +2092,26 @@
       const lineText = event.target.closest('.result-line-text');
       if (!lineText || !selectedWiringCell) return;
 
-      selectedWiringCell.textContent = lineText.value.trim();
+      const copiedText = lineText.value.trim();
+      selectedWiringCell.textContent = copiedText;
+      registerWiringDeviceInPartsList(selectedWiringCell, copiedText);
+    }
+
+    function registerWiringDeviceInPartsList(cell, deviceText) {
+      if (!cell || !deviceText || !isWiringDeviceCell(cell)) return;
+
+      const partsDeviceCells = [...partsTable.querySelectorAll('tbody tr td:first-child')];
+      const alreadyRegistered = partsDeviceCells.some((deviceCell) => deviceCell.textContent.trim() === deviceText);
+      if (alreadyRegistered) return;
+
+      const emptyDeviceCell = partsDeviceCells.find((deviceCell) => deviceCell.textContent.trim() === '');
+      if (!emptyDeviceCell) return;
+
+      emptyDeviceCell.textContent = deviceText;
+    }
+
+    function isWiringDeviceCell(cell) {
+      return cell.cellIndex === 0 && cell.closest('table') === wiringTable;
     }
 
     function enableExtractionResultLineEditing(event) {
