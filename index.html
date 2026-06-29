@@ -58,11 +58,53 @@
       padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
 
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      position: sticky;
+      top: 5.25rem;
+      z-index: 1;
+      padding: 1rem 0 0;
+      background: #f5f7fb;
+    }
+
+    .tab-button {
+      background: #e7eefb;
+      color: #0b3c7d;
+    }
+
+    .tab-button[aria-selected="true"] {
+      background: #0b63ce;
+      color: #ffffff;
+    }
+
+    .tab-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .pdf-tab-toolbar,
     .toolbar,
     .result-panel {
       display: flex;
       flex-direction: column;
       gap: .75rem;
+    }
+
+    .pdf-tab-toolbar {
+      background: #ffffff;
+      border: 1px solid #d9deea;
+      border-radius: 1rem;
+      box-shadow: 0 12px 32px rgb(29 45 73 / 10%);
+      padding: 1rem;
     }
 
     .toolbar-row {
@@ -286,6 +328,10 @@
         grid-template-columns: 1fr;
       }
 
+      .tab-list {
+        top: 5rem;
+      }
+
       .result-panel {
         position: static;
       }
@@ -295,19 +341,8 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V023</span>
+      <span class="version-badge" aria-label="バージョン">V025</span>
       <h1>Apple Pen Reader</h1>
-    </div>
-    <div class="toolbar-row">
-      <input id="pdfInput" type="file" accept="application/pdf">
-      <button id="extractButton" disabled>囲み文字を抽出</button>
-      <button id="clearButton" class="secondary" disabled>囲み線を消す</button>
-      <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
-      <div class="page-controls" aria-label="ページ切り替え">
-        <button id="previousPageButton" class="secondary" disabled>前のページ</button>
-        <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
-        <button id="nextPageButton" class="secondary" disabled>次のページ</button>
-      </div>
     </div>
   </header>
 
@@ -325,19 +360,41 @@
       <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
     </aside>
 
-    <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
-      <div id="placeholder" class="placeholder" hidden>
-        <div>
-          <h2>PDFを選択してください</h2>
-          <p class="hint">PDFを開いて、指で拡大縮小・移動し、Apple Pencilで文字を囲んでください。</p>
+    <div class="tabs">
+      <div class="tab-list" role="tablist" aria-label="PDF表示切り替え">
+        <button id="pdfTabButton" class="tab-button" type="button" role="tab" aria-selected="true" aria-controls="pdfTab">PDF</button>
+      </div>
+
+      <section id="pdfTab" class="tab-panel" role="tabpanel" aria-labelledby="pdfTabButton">
+        <div class="pdf-tab-toolbar" aria-label="PDF操作">
+          <div class="toolbar-row">
+            <input id="pdfInput" type="file" accept="application/pdf">
+            <button id="extractButton" disabled>囲み文字を抽出</button>
+            <button id="clearButton" class="secondary" disabled>囲み線を消す</button>
+            <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
+          </div>
+          <div class="page-controls" aria-label="ページ切り替え">
+            <button id="previousPageButton" class="secondary" disabled>前のページ</button>
+            <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
+            <button id="nextPageButton" class="secondary" disabled>次のページ</button>
+          </div>
         </div>
-      </div>
-      <div id="stage" class="page-stage" hidden>
-        <canvas id="pdfCanvas"></canvas>
-        <canvas id="debugCanvas"></canvas>
-        <canvas id="drawCanvas"></canvas>
-      </div>
-    </section>
+
+        <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
+          <div id="placeholder" class="placeholder" hidden>
+            <div>
+              <h2>PDFを選択してください</h2>
+              <p class="hint">PDFを開いて、指で拡大縮小・移動し、Apple Pencilで文字を囲んでください。</p>
+            </div>
+          </div>
+          <div id="stage" class="page-stage" hidden>
+            <canvas id="pdfCanvas"></canvas>
+            <canvas id="debugCanvas"></canvas>
+            <canvas id="drawCanvas"></canvas>
+          </div>
+        </section>
+      </section>
+    </div>
   </main>
 
   <script type="module">
