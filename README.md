@@ -5,7 +5,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## What it does
 
 - Opens a local PDF from a browser file input inside the PDF tab.
-- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries.
+- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries, and highlights the touched cell with a red border while restoring the previous cell border.
 - Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the selected page with PDF.js inside a PDF tab that also contains the file input, extraction controls, debug toggle, previous/next page navigation, and a current-page/total-page count.
 - Places a transparent drawing canvas above the PDF page.
@@ -38,7 +38,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 2. Open `http://localhost:8000/` in a browser.
 3. Open the **PDF** tab, tap **ファイルを選択**, and choose a PDF.
-4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table.
+4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table. Tap a wiring-list cell to mark its border red; tapping another cell restores the previous cell and marks the new one.
 5. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
 6. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
 7. Tap **文字位置を表示** if you want to inspect the rectangles and center points used for hit testing.
