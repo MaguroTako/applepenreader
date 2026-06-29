@@ -108,22 +108,39 @@
     }
 
     .toolbar-row {
+      align-items: center;
       display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
+      flex-wrap: nowrap;
+      gap: .35rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .pdf-control-button,
+    .pdf-control-input::file-selector-button {
+      border-radius: .55rem;
+      font-size: .9rem;
+      line-height: 1.2;
+      padding: .45rem .65rem;
+    }
+
+    .pdf-control-input {
+      max-width: 10rem;
     }
 
     .page-controls {
       align-items: center;
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
+      display: inline-flex;
+      flex: 0 0 auto;
+      gap: .35rem;
     }
 
     .page-status {
       color: #182033;
+      flex: 0 0 auto;
+      font-size: .9rem;
       font-weight: 700;
-      min-width: 5.5rem;
+      min-width: 4.25rem;
       text-align: center;
     }
 
@@ -338,7 +355,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V026</span>
+      <span class="version-badge" aria-label="バージョン">V027</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -365,15 +382,15 @@
       <section id="pdfTab" class="tab-panel" role="tabpanel" aria-labelledby="pdfTabButton">
         <div class="pdf-tab-toolbar" aria-label="PDF操作">
           <div class="toolbar-row">
-            <input id="pdfInput" type="file" accept="application/pdf">
-            <button id="extractButton" disabled>囲み文字を抽出</button>
-            <button id="clearButton" class="secondary" disabled>囲み線を消す</button>
-            <button id="debugButton" class="secondary" disabled aria-pressed="false">文字位置を表示</button>
-          </div>
-          <div class="page-controls" aria-label="ページ切り替え">
-            <button id="previousPageButton" class="secondary" disabled>前のページ</button>
-            <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
-            <button id="nextPageButton" class="secondary" disabled>次のページ</button>
+            <input id="pdfInput" class="pdf-control-input" type="file" accept="application/pdf">
+            <button id="extractButton" class="pdf-control-button" disabled>囲み文字を抽出</button>
+            <button id="clearButton" class="secondary pdf-control-button" disabled>囲み線を消す</button>
+            <button id="debugButton" class="secondary pdf-control-button" disabled aria-pressed="false">文字位置を表示</button>
+            <div class="page-controls" aria-label="ページ切り替え">
+              <button id="previousPageButton" class="secondary pdf-control-button" disabled>前のページ</button>
+              <span id="pageStatus" class="page-status" aria-live="polite">0 / 0</span>
+              <button id="nextPageButton" class="secondary pdf-control-button" disabled>次のページ</button>
+            </div>
           </div>
         </div>
 
