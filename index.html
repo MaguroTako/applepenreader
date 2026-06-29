@@ -318,8 +318,16 @@
     }
 
     @media (max-width: 860px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
       .tab-list {
         top: 5rem;
+      }
+
+      .result-panel {
+        position: static;
       }
     }
   </style>
@@ -327,7 +335,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V024</span>
+      <span class="version-badge" aria-label="バージョン">V025</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -337,6 +345,19 @@
       <div class="tab-list" role="tablist" aria-label="表示切り替え">
         <button id="pdfTabButton" class="tab-button" type="button" role="tab" aria-selected="true" aria-controls="pdfTab">PDF</button>
         <button id="resultTabButton" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="resultTab">抽出結果</button>
+      </div>
+      <output id="result" role="list">まだ抽出されていません。</output>
+      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
+      <div>
+        <h2>検出したテキスト</h2>
+      </div>
+      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
+    </aside>
+
+    <div class="tabs">
+      <div class="tab-list" role="tablist" aria-label="PDF表示切り替え">
+        <button id="pdfTabButton" class="tab-button" type="button" role="tab" aria-selected="true" aria-controls="pdfTab">PDF</button>
       </div>
 
       <section id="pdfTab" class="tab-panel" role="tabpanel" aria-labelledby="pdfTabButton">
@@ -367,21 +388,6 @@
             <canvas id="drawCanvas"></canvas>
           </div>
         </section>
-      </section>
-
-      <section id="resultTab" class="tab-panel" role="tabpanel" aria-labelledby="resultTabButton" hidden>
-        <aside class="result-panel" aria-label="抽出と検索パネル">
-          <div>
-            <h2>抽出結果</h2>
-          </div>
-          <output id="result" role="list">まだ抽出されていません。</output>
-          <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
-          <div>
-            <h2>検出したテキスト</h2>
-          </div>
-          <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
-          <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
-        </aside>
       </section>
     </div>
   </main>
