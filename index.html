@@ -53,7 +53,7 @@
 
     main {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+      grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
       gap: 1rem;
       padding: 0 clamp(1rem, 4vw, 2rem) 2rem;
     }
@@ -168,83 +168,6 @@
       position: sticky;
       top: 5.5rem;
       align-self: start;
-    }
-
-    .side-drawer {
-      max-height: calc(100vh - 7rem);
-      overflow: auto;
-    }
-
-    .drawer-tabs {
-      display: grid;
-      gap: .75rem;
-    }
-
-    .tab-list {
-      background: #f5f7fb;
-      border: 1px solid #d9deea;
-      border-radius: .9rem;
-      display: grid;
-      gap: .35rem;
-      grid-template-columns: repeat(2, 1fr);
-      padding: .35rem;
-    }
-
-    .tab-button {
-      background: transparent;
-      color: #3b4558;
-      padding: .65rem .75rem;
-    }
-
-    .tab-button[aria-selected="true"] {
-      background: #0b63ce;
-      color: #ffffff;
-      box-shadow: 0 6px 18px rgb(11 99 206 / 20%);
-    }
-
-    .tab-panel {
-      display: flex;
-      flex-direction: column;
-      gap: .75rem;
-    }
-
-    .drawer-table-wrap {
-      border: 1px solid #d9deea;
-      border-radius: .75rem;
-      overflow: auto;
-    }
-
-    .drawer-table {
-      border-collapse: collapse;
-      min-width: 100%;
-      table-layout: fixed;
-    }
-
-    .drawer-table caption {
-      color: #5d677a;
-      font-size: .95rem;
-      line-height: 1.5;
-      padding: .75rem;
-      text-align: left;
-    }
-
-    .drawer-table th,
-    .drawer-table td {
-      border-top: 1px solid #d9deea;
-      padding: .65rem .5rem;
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    .drawer-table th {
-      background: #e7eefb;
-      color: #0b3c7d;
-      font-weight: 700;
-    }
-
-    .drawer-table td {
-      background: #ffffff;
-      height: 2.5rem;
     }
 
     #result,
@@ -372,7 +295,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V022</span>
+      <span class="version-badge" aria-label="バージョン">V023</span>
       <h1>Apple Pen Reader</h1>
     </div>
     <div class="toolbar-row">
@@ -389,6 +312,19 @@
   </header>
 
   <main>
+    <aside class="result-panel" aria-label="抽出と検索パネル">
+      <div>
+        <h2>抽出結果</h2>
+      </div>
+      <output id="result" role="list">まだ抽出されていません。</output>
+      <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
+      <div>
+        <h2>検出したテキスト</h2>
+      </div>
+      <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
+      <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
+    </aside>
+
     <section id="viewerShell" class="viewer-shell" aria-label="PDF表示領域" hidden>
       <div id="placeholder" class="placeholder" hidden>
         <div>
@@ -402,60 +338,6 @@
         <canvas id="drawCanvas"></canvas>
       </div>
     </section>
-
-    <aside class="result-panel side-drawer" aria-label="右サイドドロワー">
-      <div class="drawer-tabs">
-        <div class="tab-list" role="tablist" aria-label="右サイドドロワーのタブ">
-          <button id="resultTab" class="tab-button" type="button" role="tab" aria-selected="true" aria-controls="resultPanel">抽出</button>
-          <button id="tableTab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tablePanel">テーブル</button>
-        </div>
-
-        <section id="resultPanel" class="tab-panel" role="tabpanel" aria-labelledby="resultTab">
-          <div>
-            <h2>抽出結果</h2>
-          </div>
-          <output id="result" role="list">まだ抽出されていません。</output>
-          <button id="resetResultButton" class="secondary" type="button">抽出結果をリセット</button>
-          <div>
-            <h2>検出したテキスト</h2>
-          </div>
-          <output id="detectedText">PDFを読み込むと検出テキストを表示します。</output>
-          <button id="resetDetectedTextButton" class="secondary" type="button">検出テキストを消す</button>
-        </section>
-
-        <section id="tablePanel" class="tab-panel" role="tabpanel" aria-labelledby="tableTab" hidden>
-          <div>
-            <h2>テーブル</h2>
-            <p class="hint">横4列、縦10行の入力用テーブルです。</p>
-          </div>
-          <div class="drawer-table-wrap">
-            <table class="drawer-table">
-              <caption>右サイドドロワー内の4列×10行テーブル</caption>
-              <thead>
-                <tr>
-                  <th scope="col">列1</th>
-                  <th scope="col">列2</th>
-                  <th scope="col">列3</th>
-                  <th scope="col">列4</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-                <tr><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </aside>
   </main>
 
   <script type="module">
@@ -480,7 +362,6 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
-    const tabButtons = document.querySelectorAll('[role="tab"]');
     const pdfContext = pdfCanvas.getContext('2d');
     const drawContext = drawCanvas.getContext('2d');
     const debugContext = debugCanvas.getContext('2d');
@@ -542,7 +423,6 @@
     result.addEventListener('pointerup', handleResultLinePointerUp);
     result.addEventListener('pointercancel', cancelResultLinePointerDrag);
     resetDetectedTextButton.addEventListener('click', resetDetectedText);
-    tabButtons.forEach((button) => button.addEventListener('click', switchDrawerTab));
     previousPageButton.addEventListener('click', () => showPage(currentPageNumber - 1));
     nextPageButton.addEventListener('click', () => showPage(currentPageNumber + 1));
     debugButton.addEventListener('click', () => {
@@ -602,15 +482,6 @@
       pageStatus.textContent = `${currentPageNumber || 0} / ${totalPages}`;
       previousPageButton.disabled = !pdfDocument || currentPageNumber <= 1;
       nextPageButton.disabled = !pdfDocument || currentPageNumber >= totalPages;
-    }
-
-    function switchDrawerTab(event) {
-      const selectedTab = event.currentTarget;
-      tabButtons.forEach((button) => {
-        const isSelected = button === selectedTab;
-        button.setAttribute('aria-selected', String(isSelected));
-        document.querySelector(`#${button.getAttribute('aria-controls')}`).hidden = !isSelected;
-      });
     }
 
     function bestScaleForScreen(page) {
