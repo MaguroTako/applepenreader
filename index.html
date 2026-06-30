@@ -152,20 +152,17 @@
 
     .wiring-connect-select {
       appearance: auto;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: .45rem;
+      background: transparent;
+      border: 0;
       box-sizing: border-box;
       color: #182033;
       font: inherit;
       min-height: 2rem;
-      padding: .25rem .45rem;
+      padding: .25rem 0;
       width: 100%;
     }
 
     .wiring-connect-select:focus {
-      border-color: #0b63ce;
-      box-shadow: 0 0 0 3px rgb(11 99 206 / 18%);
       outline: none;
     }
 
@@ -433,7 +430,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V035</span>
+      <span class="version-badge" aria-label="バージョン">V036</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1602,6 +1599,7 @@
       wiringTable.querySelectorAll('tbody tr td:nth-child(3)').forEach((cell, index) => {
         const select = document.createElement('select');
         select.className = 'wiring-connect-select';
+        select.tabIndex = -1;
         select.setAttribute('aria-label', `Connect ${index + 1}`);
 
         const emptyOption = document.createElement('option');
