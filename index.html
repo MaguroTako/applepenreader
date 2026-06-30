@@ -1584,7 +1584,7 @@
     const minViewScale = 0.75;
     const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
-    const wiringConnectOptions = ['NO', 'NC'];
+    const wiringConnectOptions = ['L1→Lo1','L2→Lo2','L3→Lo3','NO', 'NC','LAMP','BUZZ'];
 
     tabButtons.forEach((button) => button.addEventListener('click', () => selectTab(button)));
     wiringTable.addEventListener('click', selectWiringCell);
