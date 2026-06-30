@@ -150,8 +150,7 @@
       z-index: 1;
     }
 
-    .wiring-connect-select {
-      appearance: auto;
+    .wiring-connect-input {
       background: transparent;
       border: 0;
       box-sizing: border-box;
@@ -162,7 +161,7 @@
       width: 100%;
     }
 
-    .wiring-connect-select:focus {
+    .wiring-connect-input:focus {
       outline: none;
     }
 
@@ -430,7 +429,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V036</span>
+      <span class="version-badge" aria-label="バージョン">V037</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1596,25 +1595,25 @@
     });
 
     function initializeWiringConnectCells() {
+      const dataListId = 'wiringConnectOptions';
+      const dataList = document.createElement('datalist');
+      dataList.id = dataListId;
+      wiringConnectOptions.forEach((optionText) => {
+        const option = document.createElement('option');
+        option.value = optionText;
+        dataList.append(option);
+      });
+      document.body.append(dataList);
+
       wiringTable.querySelectorAll('tbody tr td:nth-child(3)').forEach((cell, index) => {
-        const select = document.createElement('select');
-        select.className = 'wiring-connect-select';
-        select.tabIndex = -1;
-        select.setAttribute('aria-label', `Connect ${index + 1}`);
+        const input = document.createElement('input');
+        input.className = 'wiring-connect-input';
+        input.type = 'text';
+        input.setAttribute('list', dataListId);
+        input.tabIndex = -1;
+        input.setAttribute('aria-label', `Connect ${index + 1}`);
 
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = '';
-        select.append(emptyOption);
-
-        wiringConnectOptions.forEach((optionText) => {
-          const option = document.createElement('option');
-          option.value = optionText;
-          option.textContent = optionText;
-          select.append(option);
-        });
-
-        cell.replaceChildren(select);
+        cell.replaceChildren(input);
       });
     }
 
@@ -1631,7 +1630,7 @@
     }
 
     function selectWiringCellWithKeyboard(event) {
-      if (event.target.closest('select')) return;
+      if (event.target.closest('input, select')) return;
       if (event.key !== 'Enter' && event.key !== ' ') return;
 
       event.preventDefault();
@@ -2141,10 +2140,8 @@
 
     function setWiringCellValue(cell, value) {
       if (isWiringConnectCell(cell)) {
-        const select = cell.querySelector('select');
-        if (select && wiringConnectOptions.includes(value)) {
-          select.value = value;
-        }
+        const input = cell.querySelector('input');
+        if (input) input.value = value;
         return;
       }
 
