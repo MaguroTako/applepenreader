@@ -39,7 +39,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 2. Open `http://localhost:8000/` in a browser.
 3. Open the **PDF** tab, tap **ファイルを選択**, and choose a PDF.
-4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table. Tap a wiring-list cell to mark its border red; tapping another cell restores the previous cell and marks the new one. Single-click/tap a **Connect** cell to show registered strings as tags and select one; tap **キーボード入力** or double-click/tap the cell when you want to type another value with the iPad software keyboard.
+4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table. Tap a wiring-list cell to mark its border red; tapping another cell restores the previous cell and marks the new one. Single-click/tap a **Connect** cell to show registered strings as tags and select one; tap **キーボード入力** or double-click/tap the cell when you want to type another value with the iPad software keyboard. The keyboard button keeps the current Connect cell selected so the tap does not fall through to a lower table cell.
 5. Open the **部品リスト** tab when you want to view the 2-column, 100-row parts table with **Device** and **TypeName** headings.
 6. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
 7. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.
