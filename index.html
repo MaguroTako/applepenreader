@@ -194,7 +194,8 @@
       display: flex;
     }
 
-    .wiring-connect-tag {
+    .wiring-connect-tag,
+    .wiring-connect-keyboard-button {
       background: #e7eefb;
       border: 1px solid #8fb0df;
       border-radius: 999px;
@@ -204,8 +205,17 @@
       padding: .35rem .65rem;
     }
 
+    .wiring-connect-keyboard-button {
+      background: #fff7ed;
+      border-color: #f97316;
+      color: #9a3412;
+      flex-basis: 100%;
+    }
+
     .wiring-connect-tag:focus,
-    .wiring-connect-tag:hover {
+    .wiring-connect-tag:hover,
+    .wiring-connect-keyboard-button:focus,
+    .wiring-connect-keyboard-button:hover {
       background: #cfe0f8;
       outline: none;
     }
@@ -474,7 +484,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V038</span>
+      <span class="version-badge" aria-label="バージョン">V039</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1625,6 +1635,7 @@
     let activeResultDrag = null;
     let lastResultLineTap = null;
     let selectedWiringCell = null;
+    let lastConnectInputTap = null;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -1647,14 +1658,24 @@
         cell.classList.add('wiring-connect-cell');
         input.className = 'wiring-connect-input';
         input.type = 'text';
+        input.inputMode = 'text';
+        input.autocomplete = 'off';
         input.readOnly = true;
         input.tabIndex = -1;
         input.setAttribute('aria-label', `Connect ${index + 1}`);
         input.addEventListener('dblclick', enableConnectKeyboardInput);
+        input.addEventListener('pointerup', enableConnectKeyboardInputOnDoubleTap);
         input.addEventListener('blur', lockConnectKeyboardInput);
 
         tagList.className = 'wiring-connect-tags';
         tagList.setAttribute('aria-label', `Connect ${index + 1} 候補`);
+        const keyboardButton = document.createElement('button');
+        keyboardButton.className = 'wiring-connect-keyboard-button';
+        keyboardButton.type = 'button';
+        keyboardButton.textContent = 'キーボード入力';
+        keyboardButton.addEventListener('pointerdown', enableConnectKeyboardInputFromTag);
+        keyboardButton.addEventListener('click', enableConnectKeyboardInputFromTag);
+        tagList.append(keyboardButton);
         wiringConnectOptions.forEach((optionText) => {
           const optionButton = document.createElement('button');
           optionButton.className = 'wiring-connect-tag';
@@ -1726,17 +1747,43 @@
 
       hideConnectTags();
       input.readOnly = false;
-      input.focus();
+      input.tabIndex = 0;
+      input.focus({ preventScroll: true });
       input.select();
+    }
+
+    function enableConnectKeyboardInputFromTag(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const cell = event.currentTarget.closest('td');
+      const input = cell?.querySelector('.wiring-connect-input');
+      if (!input) return;
+
+      enableConnectKeyboardInput({ currentTarget: input });
+    }
+
+    function enableConnectKeyboardInputOnDoubleTap(event) {
+      if (event.pointerType === 'mouse') return;
+
+      const now = Date.now();
+      const lastTap = lastConnectInputTap;
+      lastConnectInputTap = { target: event.currentTarget, time: now };
+      if (!lastTap || lastTap.target !== event.currentTarget || now - lastTap.time > 450) return;
+
+      event.preventDefault();
+      enableConnectKeyboardInput(event);
     }
 
     function lockConnectKeyboardInput(event) {
       event.currentTarget.readOnly = true;
+      event.currentTarget.tabIndex = -1;
     }
 
     function lockAllConnectKeyboardInputs() {
       wiringTable.querySelectorAll('.wiring-connect-input:not([readonly])').forEach((input) => {
         input.readOnly = true;
+        input.tabIndex = -1;
       });
     }
 
