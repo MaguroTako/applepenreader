@@ -150,6 +150,14 @@
       z-index: 1;
     }
 
+    .wiring-table td[contenteditable="true"] {
+      background: #fff7ed;
+      border-color: #f97316;
+      box-shadow: inset 0 0 0 2px #f97316;
+      cursor: text;
+      outline: none;
+    }
+
     .wiring-connect-cell {
       position: relative;
     }
@@ -484,7 +492,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V040</span>
+      <span class="version-badge" aria-label="バージョン">V041</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1635,6 +1643,7 @@
     let activeResultDrag = null;
     let lastResultLineTap = null;
     let selectedWiringCell = null;
+    let lastWiringCellTap = null;
     let lastConnectInputTap = null;
     let suppressWiringCellSelectionUntil = 0;
 
@@ -1645,10 +1654,14 @@
 
     tabButtons.forEach((button) => button.addEventListener('click', () => selectTab(button)));
     wiringTable.addEventListener('click', selectWiringCell);
+    wiringTable.addEventListener('dblclick', enableWiringCellKeyboardInputWithMouse);
+    wiringTable.addEventListener('pointerup', enableWiringCellKeyboardInputOnDoubleTap);
     initializeWiringConnectCells();
     wiringTable.querySelectorAll('td').forEach((cell) => {
       cell.tabIndex = 0;
       cell.addEventListener('keydown', selectWiringCellWithKeyboard);
+      cell.addEventListener('blur', lockWiringCellKeyboardInput);
+      cell.addEventListener('input', registerEditedWiringDeviceInPartsList);
     });
 
     function initializeWiringConnectCells() {
@@ -1704,6 +1717,7 @@
       const clickCount = event.detail || 1;
       if (clickCount < 2) {
         lockAllConnectKeyboardInputs();
+        lockOtherWiringCellKeyboardInputs();
       }
 
       if (selectedWiringCell && selectedWiringCell !== cell) {
@@ -1715,6 +1729,7 @@
 
       if (!isWiringConnectCell(cell)) {
         hideConnectTags();
+        if (clickCount >= 2) enableWiringCellKeyboardInput(cell);
         return;
       }
 
@@ -1725,6 +1740,64 @@
       }
 
       showConnectTags(cell);
+    }
+
+
+    function enableWiringCellKeyboardInputWithMouse(event) {
+      const cell = event.target.closest('td');
+      if (!cell || !wiringTable.contains(cell) || isWiringConnectCell(cell)) return;
+
+      enableWiringCellKeyboardInput(cell);
+    }
+
+    function enableWiringCellKeyboardInputOnDoubleTap(event) {
+      if (event.pointerType === 'mouse' || event.target.closest('input, button')) return;
+
+      const cell = event.target.closest('td');
+      if (!cell || !wiringTable.contains(cell) || isWiringConnectCell(cell)) return;
+
+      const now = Date.now();
+      const lastTap = lastWiringCellTap;
+      lastWiringCellTap = { target: cell, time: now };
+      if (!lastTap || lastTap.target !== cell || now - lastTap.time > 450) return;
+
+      event.preventDefault();
+      suppressWiringCellSelectionUntil = Date.now() + 700;
+      enableWiringCellKeyboardInput(cell);
+    }
+
+    function enableWiringCellKeyboardInput(cell) {
+      if (!cell || isWiringConnectCell(cell)) return;
+
+      lockAllConnectKeyboardInputs();
+      lockOtherWiringCellKeyboardInputs(cell);
+      cell.contentEditable = 'true';
+      cell.focus({ preventScroll: true });
+      selectWiringCellText(cell);
+    }
+
+    function selectWiringCellText(cell) {
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function lockWiringCellKeyboardInput(event) {
+      event.currentTarget.removeAttribute('contenteditable');
+      window.getSelection()?.removeAllRanges();
+    }
+
+    function lockOtherWiringCellKeyboardInputs(activeCell = null) {
+      wiringTable.querySelectorAll('td[contenteditable="true"]').forEach((cell) => {
+        if (cell !== activeCell) cell.removeAttribute('contenteditable');
+      });
+    }
+
+    function registerEditedWiringDeviceInPartsList(event) {
+      const cell = event.currentTarget;
+      registerWiringDeviceInPartsList(cell, cell.textContent.trim());
     }
 
     function showConnectTags(cell) {
