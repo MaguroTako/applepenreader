@@ -150,6 +150,10 @@
       z-index: 1;
     }
 
+    .wiring-connect-cell {
+      position: relative;
+    }
+
     .wiring-connect-input {
       background: transparent;
       border: 0;
@@ -162,6 +166,47 @@
     }
 
     .wiring-connect-input:focus {
+      outline: none;
+    }
+
+    .wiring-connect-input[readonly] {
+      caret-color: transparent;
+      cursor: pointer;
+    }
+
+    .wiring-connect-tags {
+      background: #ffffff;
+      border: 1px solid #b7c4d8;
+      border-radius: .75rem;
+      box-shadow: 0 12px 28px rgb(29 45 73 / 18%);
+      display: none;
+      flex-wrap: wrap;
+      gap: .4rem;
+      left: .35rem;
+      min-width: 14rem;
+      padding: .55rem;
+      position: absolute;
+      top: calc(100% - .15rem);
+      z-index: 5;
+    }
+
+    .wiring-connect-cell.show-connect-tags .wiring-connect-tags {
+      display: flex;
+    }
+
+    .wiring-connect-tag {
+      background: #e7eefb;
+      border: 1px solid #8fb0df;
+      border-radius: 999px;
+      color: #0b3c7d;
+      cursor: pointer;
+      font: inherit;
+      padding: .35rem .65rem;
+    }
+
+    .wiring-connect-tag:focus,
+    .wiring-connect-tag:hover {
+      background: #cfe0f8;
       outline: none;
     }
 
@@ -429,7 +474,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V037</span>
+      <span class="version-badge" aria-label="バージョン">V038</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1595,25 +1640,31 @@
     });
 
     function initializeWiringConnectCells() {
-      const dataListId = 'wiringConnectOptions';
-      const dataList = document.createElement('datalist');
-      dataList.id = dataListId;
-      wiringConnectOptions.forEach((optionText) => {
-        const option = document.createElement('option');
-        option.value = optionText;
-        dataList.append(option);
-      });
-      document.body.append(dataList);
-
       wiringTable.querySelectorAll('tbody tr td:nth-child(3)').forEach((cell, index) => {
         const input = document.createElement('input');
+        const tagList = document.createElement('div');
+
+        cell.classList.add('wiring-connect-cell');
         input.className = 'wiring-connect-input';
         input.type = 'text';
-        input.setAttribute('list', dataListId);
+        input.readOnly = true;
         input.tabIndex = -1;
         input.setAttribute('aria-label', `Connect ${index + 1}`);
+        input.addEventListener('dblclick', enableConnectKeyboardInput);
+        input.addEventListener('blur', lockConnectKeyboardInput);
 
-        cell.replaceChildren(input);
+        tagList.className = 'wiring-connect-tags';
+        tagList.setAttribute('aria-label', `Connect ${index + 1} 候補`);
+        wiringConnectOptions.forEach((optionText) => {
+          const optionButton = document.createElement('button');
+          optionButton.className = 'wiring-connect-tag';
+          optionButton.type = 'button';
+          optionButton.textContent = optionText;
+          optionButton.addEventListener('click', selectConnectTag);
+          tagList.append(optionButton);
+        });
+
+        cell.replaceChildren(input, tagList);
       });
     }
 
@@ -1621,12 +1672,72 @@
       const cell = event.target.closest('td');
       if (!cell || !wiringTable.contains(cell)) return;
 
+      const clickCount = event.detail || 1;
+      if (clickCount < 2) {
+        lockAllConnectKeyboardInputs();
+      }
+
       if (selectedWiringCell && selectedWiringCell !== cell) {
         selectedWiringCell.classList.remove('selected-wiring-cell');
       }
 
       selectedWiringCell = cell;
       selectedWiringCell.classList.add('selected-wiring-cell');
+
+      if (!isWiringConnectCell(cell)) {
+        hideConnectTags();
+        return;
+      }
+
+      if (clickCount >= 2) {
+        const input = cell.querySelector('.wiring-connect-input');
+        if (input) enableConnectKeyboardInput({ currentTarget: input });
+        return;
+      }
+
+      showConnectTags(cell);
+    }
+
+    function showConnectTags(cell) {
+      hideConnectTags(cell);
+      cell.classList.add('show-connect-tags');
+    }
+
+    function hideConnectTags(exceptCell = null) {
+      wiringTable.querySelectorAll('.wiring-connect-cell.show-connect-tags').forEach((cell) => {
+        if (cell !== exceptCell) cell.classList.remove('show-connect-tags');
+      });
+    }
+
+    function selectConnectTag(event) {
+      event.stopPropagation();
+      const tagButton = event.currentTarget;
+      const cell = tagButton.closest('td');
+      if (!cell) return;
+
+      setWiringCellValue(cell, tagButton.textContent.trim());
+      cell.classList.remove('show-connect-tags');
+    }
+
+    function enableConnectKeyboardInput(event) {
+      const input = event.currentTarget;
+      const cell = input.closest('td');
+      if (!cell) return;
+
+      hideConnectTags();
+      input.readOnly = false;
+      input.focus();
+      input.select();
+    }
+
+    function lockConnectKeyboardInput(event) {
+      event.currentTarget.readOnly = true;
+    }
+
+    function lockAllConnectKeyboardInputs() {
+      wiringTable.querySelectorAll('.wiring-connect-input:not([readonly])').forEach((input) => {
+        input.readOnly = true;
+      });
     }
 
     function selectWiringCellWithKeyboard(event) {
