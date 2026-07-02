@@ -484,7 +484,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V039</span>
+      <span class="version-badge" aria-label="バージョン">V040</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1636,6 +1636,7 @@
     let lastResultLineTap = null;
     let selectedWiringCell = null;
     let lastConnectInputTap = null;
+    let suppressWiringCellSelectionUntil = 0;
 
     const minViewScale = 0.75;
     const maxViewScale = 4;
@@ -1673,8 +1674,9 @@
         keyboardButton.className = 'wiring-connect-keyboard-button';
         keyboardButton.type = 'button';
         keyboardButton.textContent = 'キーボード入力';
-        keyboardButton.addEventListener('pointerdown', enableConnectKeyboardInputFromTag);
-        keyboardButton.addEventListener('click', enableConnectKeyboardInputFromTag);
+        keyboardButton.addEventListener('pointerdown', (event) => keepKeyboardButtonTapInsideTags(event));
+        keyboardButton.addEventListener('pointerup', enableConnectKeyboardInputFromTag);
+        keyboardButton.addEventListener('click', (event) => keepKeyboardButtonTapInsideTags(event));
         tagList.append(keyboardButton);
         wiringConnectOptions.forEach((optionText) => {
           const optionButton = document.createElement('button');
@@ -1690,6 +1692,12 @@
     }
 
     function selectWiringCell(event) {
+      if (Date.now() < suppressWiringCellSelectionUntil && !event.target.closest('.wiring-connect-input')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
       const cell = event.target.closest('td');
       if (!cell || !wiringTable.contains(cell)) return;
 
@@ -1740,27 +1748,38 @@
       cell.classList.remove('show-connect-tags');
     }
 
-    function enableConnectKeyboardInput(event) {
+    function enableConnectKeyboardInput(event, options = {}) {
       const input = event.currentTarget;
       const cell = input.closest('td');
       if (!cell) return;
 
-      hideConnectTags();
+      if (options.hideTags !== false) hideConnectTags();
       input.readOnly = false;
       input.tabIndex = 0;
       input.focus({ preventScroll: true });
-      input.select();
+      input.setSelectionRange(0, input.value.length);
+    }
+
+    function keepKeyboardButtonTapInsideTags(event, options = {}) {
+      suppressWiringCellSelectionUntil = Date.now() + 700;
+      if (options.preventDefault !== false) event.preventDefault();
+      event.stopPropagation();
     }
 
     function enableConnectKeyboardInputFromTag(event) {
-      event.preventDefault();
-      event.stopPropagation();
+      keepKeyboardButtonTapInsideTags(event, { preventDefault: false });
 
       const cell = event.currentTarget.closest('td');
       const input = cell?.querySelector('.wiring-connect-input');
       if (!input) return;
 
-      enableConnectKeyboardInput({ currentTarget: input });
+      if (selectedWiringCell && selectedWiringCell !== cell) {
+        selectedWiringCell.classList.remove('selected-wiring-cell');
+      }
+      selectedWiringCell = cell;
+      selectedWiringCell.classList.add('selected-wiring-cell');
+      enableConnectKeyboardInput({ currentTarget: input }, { hideTags: false });
+      requestAnimationFrame(() => cell.classList.remove('show-connect-tags'));
     }
 
     function enableConnectKeyboardInputOnDoubleTap(event) {
