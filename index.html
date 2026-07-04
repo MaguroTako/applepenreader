@@ -180,6 +180,7 @@
     .wiring-connect-input[readonly] {
       caret-color: transparent;
       cursor: pointer;
+      pointer-events: none;
     }
 
     .wiring-connect-tags {
@@ -483,7 +484,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V042</span>
+      <span class="version-badge" aria-label="バージョン">V043</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1635,7 +1636,6 @@
     let lastResultLineTap = null;
     let selectedWiringCell = null;
     let lastWiringCellTap = null;
-    let lastConnectInputTap = null;
     let suppressWiringCellSelectionUntil = 0;
 
     const minViewScale = 0.75;
@@ -1669,7 +1669,6 @@
         input.tabIndex = -1;
         input.setAttribute('aria-label', `Connect ${index + 1}`);
         input.addEventListener('dblclick', enableConnectKeyboardInput);
-        input.addEventListener('pointerup', enableConnectKeyboardInputOnDoubleTap);
         input.addEventListener('blur', lockConnectKeyboardInput);
 
         tagList.className = 'wiring-connect-tags';
@@ -1822,18 +1821,6 @@
       input.setSelectionRange(0, input.value.length);
     }
 
-
-    function enableConnectKeyboardInputOnDoubleTap(event) {
-      if (event.pointerType === 'mouse') return;
-
-      const now = Date.now();
-      const lastTap = lastConnectInputTap;
-      lastConnectInputTap = { target: event.currentTarget, time: now };
-      if (!lastTap || lastTap.target !== event.currentTarget || now - lastTap.time > 450) return;
-
-      event.preventDefault();
-      enableConnectKeyboardInput(event);
-    }
 
     function lockConnectKeyboardInput(event) {
       event.currentTarget.readOnly = true;
