@@ -26,12 +26,12 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## Requirements
 
 - A modern browser with JavaScript modules and pointer events.
-- Local PDF.js files included under `vendor/pdfjs/4.10.38/`; no network access is required after checkout.
+- Local PDF.js files included under `vendor/pdfjs/3.11.174/`; no network access is required after checkout or download.
 - iPad Safari is the primary target, but desktop browsers can be used with a mouse for quick checks.
 
 ## How to try it
 
-1. Serve this directory with a local web server, for example:
+1. Keep `index.html` and the `vendor` folder together. You can open `index.html` directly on an iPad, or serve this directory with a local web server, for example:
 
    ```bash
    python3 -m http.server 8000
@@ -58,4 +58,4 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` keeps the extraction results visible on the left and keeps the PDF controls and viewer together in the PDF tab on the right, renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, maps finger touch gestures to CSS translate/scale transforms for panning and pinch-zooming, keeps Apple Pencil and mouse fallback input for outline drawing, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js in the left-side result panel, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
-PDF.js is bundled locally in `vendor/pdfjs/4.10.38/` so the prototype can run offline after the repository is available on the device. This keeps the prototype small and easy to run without Xcode. For production use, consider adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
+PDF.js is bundled locally in `vendor/pdfjs/3.11.174/` so the prototype can run offline after the repository or downloaded folder is available on the device. The app uses the classic script build and disables the PDF.js worker when opened directly from a local file so iPad Safari can load PDFs without a local web server. This keeps the prototype small and easy to run without Xcode. For production use, consider adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.

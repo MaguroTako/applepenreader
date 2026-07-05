@@ -484,7 +484,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V044</span>
+      <span class="version-badge" aria-label="バージョン">V045</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1586,10 +1586,12 @@
     </div>
   </main>
 
-  <script type="module">
-    import * as pdfjsLib from './vendor/pdfjs/4.10.38/pdf.min.mjs';
+  <script src="./vendor/pdfjs/3.11.174/pdf.min.js"></script>
+  <script>
+    const pdfjsLib = window.pdfjsLib;
+    const isLocalFileLaunch = window.location.protocol === 'file:';
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/4.10.38/pdf.worker.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/3.11.174/pdf.worker.min.js';
 
     const tabButtons = [...document.querySelectorAll('[role="tab"]')];
     const pdfInput = document.querySelector('#pdfInput');
@@ -1855,23 +1857,31 @@
       const [file] = event.target.files;
       if (!file) return;
 
-      const data = await file.arrayBuffer();
-      result.value = 'PDF全体のテキストを先に抽出しています。';
-      result.textContent = result.value;
-      setDetectedText('PDF全体のテキストを先に抽出しています。');
+      try {
+        const data = await file.arrayBuffer();
+        result.value = 'PDF全体のテキストを先に抽出しています。';
+        result.textContent = result.value;
+        setDetectedText('PDF全体のテキストを先に抽出しています。');
 
-      pdfDocument = await pdfjsLib.getDocument({ data }).promise;
-      cachedPages = await cacheAllTextItems(pdfDocument);
+        pdfDocument = await pdfjsLib.getDocument({ data, disableWorker: isLocalFileLaunch }).promise;
+        cachedPages = await cacheAllTextItems(pdfDocument);
 
-      await showPage(1);
-      resetExtractionResult();
-      viewerShell.hidden = false;
-      placeholder.hidden = true;
-      stage.hidden = false;
-      extractButton.disabled = false;
-      clearButton.disabled = false;
-      debugButton.disabled = false;
-      updatePageControls();
+        await showPage(1);
+        resetExtractionResult();
+        viewerShell.hidden = false;
+        placeholder.hidden = true;
+        stage.hidden = false;
+        extractButton.disabled = false;
+        clearButton.disabled = false;
+        debugButton.disabled = false;
+        updatePageControls();
+      } catch (error) {
+        console.error(error);
+        const message = `PDFを開けませんでした。HTMLを直接開いている場合は、同じフォルダに vendor フォルダがあるか確認してください。\n\n詳細: ${error.message || error}`;
+        result.value = message;
+        result.textContent = message;
+        setDetectedText(message);
+      }
     });
 
     clearButton.addEventListener('click', clearDrawing);
