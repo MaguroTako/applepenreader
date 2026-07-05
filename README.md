@@ -26,7 +26,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## Requirements
 
 - A modern browser with JavaScript modules and pointer events.
-- Network access to load PDF.js from the CDN used by `index.html`.
+- Local PDF.js files included under `vendor/pdfjs/4.10.38/`; no network access is required after checkout.
 - iPad Safari is the primary target, but desktop browsers can be used with a mouse for quick checks.
 
 ## How to try it
@@ -58,4 +58,4 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 The important part is keeping the PDF canvas and drawing canvas in the same browser coordinate space. `index.html` keeps the extraction results visible on the left and keeps the PDF controls and viewer together in the PDF tab on the right, renders the first PDF page with PDF.js, overlays a second canvas for pointer input, stores the drawn outline points in canvas coordinates, maps finger touch gestures to CSS translate/scale transforms for panning and pinch-zooming, keeps Apple Pencil and mouse fallback input for outline drawing, keeps all PDF text items in memory before the page is shown, converts the saved text fragments for the visible page into rendered coordinates, uses PDF.js line-end hints plus Y-position grouping to preserve line breaks, shows the visible page text detected by PDF.js in the left-side result panel, and extracts fragments when either their center point is inside the outline or their rectangle overlaps the outline.
 
-This keeps the prototype small and easy to run without Xcode. For production use, consider bundling PDF.js locally, adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
+PDF.js is bundled locally in `vendor/pdfjs/4.10.38/` so the prototype can run offline after the repository is available on the device. This keeps the prototype small and easy to run without Xcode. For production use, consider adding page thumbnails or direct page-number input, supporting OCR for scanned PDFs, and smoothing or simplifying hand-drawn outlines.
