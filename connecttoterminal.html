@@ -33,8 +33,8 @@
     }
 
     .window {
-      width: min(1275px, 100vw);
-      min-height: min(740px, 100vh);
+      width: min(953px, 100vw);
+      min-height: min(704px, 100vh);
       background: var(--panel);
       border: 1px solid var(--window-purple);
       border-radius: 6px;
@@ -60,16 +60,16 @@
     }
 
     .content {
-      min-height: 706px;
+      min-height: 670px;
       padding: 10px 11px 9px;
       display: grid;
-      grid-template-columns: 432px 46px 431px 1fr;
+      grid-template-columns: 432px 46px 431px;
+      grid-template-rows: auto 39px;
       gap: 10px;
     }
 
     .left,
-    .center,
-    .right {
+    .center {
       min-width: 0;
     }
 
@@ -148,8 +148,7 @@
       border-top: 5px solid #111111;
     }
 
-    .terminal-list,
-    .option-list {
+    .terminal-list {
       border: 2px groove var(--line);
       background: #000000;
       min-height: 0;
@@ -172,60 +171,6 @@
 
     .left .list-text {
       padding-left: 90px;
-    }
-
-    .bottom-row {
-      height: 39px;
-      display: grid;
-      grid-template-columns: 89px 234px 88px;
-      gap: 10px;
-      align-items: end;
-    }
-
-    .mini-field label {
-      display: block;
-      color: var(--green);
-      font-size: 14px;
-      line-height: 16px;
-    }
-
-    .input-like {
-      height: 22px;
-      border: 2px inset #d7d7d7;
-      background: var(--dark-red);
-      color: var(--yellow);
-      font: inherit;
-      font-size: 13px;
-      padding: 1px 6px;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .mini-field:nth-child(2) .input-like {
-      position: relative;
-      padding-right: 24px;
-    }
-
-    .mini-field:nth-child(2) .input-like::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      top: 0;
-      width: 17px;
-      height: 18px;
-      border-left: 1px solid #9a9a9a;
-      background: #d9d9d9;
-    }
-
-    .mini-field:nth-child(2) .input-like::before {
-      content: "";
-      position: absolute;
-      z-index: 1;
-      right: 5px;
-      top: 7px;
-      border-left: 4px solid transparent;
-      border-right: 4px solid transparent;
-      border-top: 5px solid #111111;
     }
 
     .transfer-column {
@@ -294,29 +239,12 @@
     .confirm-button {
       width: 100%;
       height: 39px;
-      margin-top: 23px;
+      grid-column: 1 / -1;
       border: 2px groove #d7d7d7;
       background: var(--button);
       color: var(--yellow);
       font: inherit;
       font-size: 14px;
-    }
-
-    .right .top-row {
-      height: 56px;
-      display: grid;
-      grid-template-rows: 21px 22px;
-      align-items: start;
-      gap: 2px;
-    }
-
-    .right .input-like {
-      width: 100%;
-      color: #ffffff;
-    }
-
-    .option-list {
-      height: 618px;
     }
 
     @media (max-width: 1000px) {
@@ -325,7 +253,7 @@
       }
 
       .window {
-        width: 1275px;
+        width: 953px;
       }
     }
   </style>
@@ -363,21 +291,6 @@
 [10]電磁ブレーキ
 [11]モーター/コンデンサ</pre>
         </div>
-
-        <div class="bottom-row">
-          <div class="mini-field">
-            <label>1:線番(L)</label>
-            <div class="input-like"></div>
-          </div>
-          <div class="mini-field">
-            <label>2:接続子</label>
-            <div class="input-like">[1]モーター/コンデンサ</div>
-          </div>
-          <div class="mini-field">
-            <label>3:線番(R)</label>
-            <div class="input-like"></div>
-          </div>
-        </div>
       </div>
 
       <div class="transfer-column">
@@ -409,18 +322,9 @@ X202      [9]ALARM
           [10]電磁ブレーキ
 W12       [11]モーター/コンデンサ</pre>
         </div>
-
-        <button class="confirm-button" type="button">確定</button>
       </div>
 
-      <div class="right">
-        <div class="top-row">
-          <div class="caption cyan">オプション部品登録名候補</div>
-          <div class="input-like">BRK12-OP1</div>
-        </div>
-
-        <div class="option-list" aria-label="オプション部品登録名候補"></div>
-      </div>
+      <button class="confirm-button" type="button">確定</button>
     </section>
   </main>
 </body>

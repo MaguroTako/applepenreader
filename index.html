@@ -108,6 +108,11 @@
       padding: 1rem;
     }
 
+    .wiring-list-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
     .wiring-table-wrap {
       border: 1px solid #d9deea;
       border-radius: .75rem;
@@ -545,6 +550,9 @@
           <div>
             <h2>配線リスト</h2>
             <p class="hint">4列100行の配線情報を確認するための一覧です。赤枠のセルを選んだあと、抽出結果のテキストをタッチするとセルへ転記できます。</p>
+          </div>
+          <div class="wiring-list-actions">
+            <button id="connectToTerminalButton" type="button">ConnectToTerminal</button>
           </div>
           <div class="wiring-table-wrap">
             <table class="wiring-table" aria-label="配線リスト 4列100行">
@@ -1609,6 +1617,7 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
+    const connectToTerminalButton = document.querySelector('#connectToTerminalButton');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -1875,6 +1884,7 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    connectToTerminalButton.addEventListener('click', openConnectToTerminal);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', handleExtractionResultClick);
     result.addEventListener('dblclick', enableExtractionResultLineEditing);
@@ -1895,6 +1905,28 @@
     extractButton.addEventListener('click', () => {
       appendUnextractedOutlines();
     });
+
+    function openConnectToTerminal() {
+      const popupWidth = 953;
+      const popupHeight = 704;
+      const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - popupWidth) / 2));
+      const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - popupHeight) / 2));
+      const features = [
+        `width=${popupWidth}`,
+        `height=${popupHeight}`,
+        `left=${left}`,
+        `top=${top}`,
+        'popup=yes',
+        'toolbar=no',
+        'menubar=no',
+        'location=no',
+        'status=no',
+        'resizable=no',
+        'scrollbars=no',
+      ].join(',');
+
+      window.open('connecttoterminal.html', 'ConnectToTerminal', features);
+    }
 
     drawCanvas.addEventListener('pointerdown', (event) => {
       if (!currentPage) return;
