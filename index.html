@@ -484,7 +484,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V044</span>
+      <span class="version-badge" aria-label="バージョン">V045</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1733,7 +1733,7 @@
     }
 
     function enableWiringCellKeyboardInputOnDoubleTap(event) {
-      if (event.pointerType === 'mouse' || event.target.closest('button')) return;
+      if (event.pointerType === 'mouse' || event.pointerType === 'pen' || event.target.closest('button')) return;
 
       const cell = event.target.closest('td');
       if (!cell || !wiringTable.contains(cell)) return;
