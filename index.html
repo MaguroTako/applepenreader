@@ -736,7 +736,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V047</span>
+      <span class="version-badge" aria-label="バージョン">V048</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1855,7 +1855,7 @@
             <button class="symbol-terminal-build-button" type="button">端子構成作成</button>
             <div></div>
             <div class="symbol-terminal-select-wrap">
-              <select aria-label="製品型式">
+              <select id="symbolToTerminalTypeSelect" aria-label="製品型式">
                 <option>SB50W</option>
               </select>
             </div>
@@ -1884,9 +1884,9 @@
           <div class="symbol-terminal-top-row">
             <div class="symbol-terminal-device-info">
               <span class="symbol-terminal-cyan">デバイス名:</span>
-              <span class="symbol-terminal-value">BRK12</span>
+              <span id="symbolToTerminalDeviceValue" class="symbol-terminal-value">BRK12</span>
               <span class="symbol-terminal-cyan">製品型式:</span>
-              <span class="symbol-terminal-value">SB50W</span>
+              <span id="symbolToTerminalTypeValue" class="symbol-terminal-value">SB50W</span>
             </div>
             <button class="symbol-terminal-convert-button" type="button">←変換</button>
             <div class="symbol-terminal-search-box" aria-hidden="true"></div>
@@ -1938,6 +1938,9 @@ W12       [11]モーター/コンデンサ</pre>
     const symbolToTerminalButton = document.querySelector('#symbolToTerminalButton');
     const symbolToTerminalModal = document.querySelector('#symbolToTerminalModal');
     const symbolToTerminalCloseButton = document.querySelector('#symbolToTerminalCloseButton');
+    const symbolToTerminalTypeSelect = document.querySelector('#symbolToTerminalTypeSelect');
+    const symbolToTerminalDeviceValue = document.querySelector('#symbolToTerminalDeviceValue');
+    const symbolToTerminalTypeValue = document.querySelector('#symbolToTerminalTypeValue');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -2230,8 +2233,34 @@ W12       [11]モーター/コンデンサ</pre>
     });
 
     function openSymbolToTerminal() {
+      updateSymbolToTerminalDeviceInfo();
       symbolToTerminalModal.hidden = false;
       symbolToTerminalCloseButton.focus({ preventScroll: true });
+    }
+
+    function updateSymbolToTerminalDeviceInfo() {
+      const deviceText = getSelectedWiringRowDeviceText();
+      const typeNameText = findPartsTypeNameByDevice(deviceText);
+
+      symbolToTerminalDeviceValue.textContent = deviceText;
+      symbolToTerminalTypeValue.textContent = typeNameText;
+      symbolToTerminalTypeSelect.replaceChildren(new Option(typeNameText, typeNameText));
+    }
+
+    function getSelectedWiringRowDeviceText() {
+      const selectedRow = selectedWiringCell?.closest('tr');
+      const deviceCell = selectedRow?.cells[0];
+      return deviceCell?.textContent.trim() || '';
+    }
+
+    function findPartsTypeNameByDevice(deviceText) {
+      if (!deviceText) return '';
+
+      const matchingRow = [...partsTable.querySelectorAll('tbody tr')].find((row) => {
+        return row.cells[0]?.textContent.trim() === deviceText;
+      });
+
+      return matchingRow?.cells[1]?.textContent.trim() || '';
     }
 
     function closeSymbolToTerminal() {
