@@ -108,6 +108,11 @@
       padding: 1rem;
     }
 
+    .wiring-list-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
     .wiring-table-wrap {
       border: 1px solid #d9deea;
       border-radius: .75rem;
@@ -158,11 +163,11 @@
       outline: none;
     }
 
-    .wiring-connect-cell {
+    .wiring-symbol-cell {
       position: relative;
     }
 
-    .wiring-connect-input {
+    .wiring-symbol-input {
       background: transparent;
       border: 0;
       box-sizing: border-box;
@@ -173,17 +178,17 @@
       width: 100%;
     }
 
-    .wiring-connect-input:focus {
+    .wiring-symbol-input:focus {
       outline: none;
     }
 
-    .wiring-connect-input[readonly] {
+    .wiring-symbol-input[readonly] {
       caret-color: transparent;
       cursor: pointer;
       pointer-events: none;
     }
 
-    .wiring-connect-tags {
+    .wiring-symbol-tags {
       background: #ffffff;
       border: 1px solid #b7c4d8;
       border-radius: .75rem;
@@ -199,11 +204,11 @@
       z-index: 5;
     }
 
-    .wiring-connect-cell.show-connect-tags .wiring-connect-tags {
+    .wiring-symbol-cell.show-symbol-tags .wiring-symbol-tags {
       display: flex;
     }
 
-    .wiring-connect-tag {
+    .wiring-symbol-tag {
       background: #e7eefb;
       border: 1px solid #8fb0df;
       border-radius: 999px;
@@ -214,8 +219,8 @@
     }
 
 
-    .wiring-connect-tag:focus,
-    .wiring-connect-tag:hover {
+    .wiring-symbol-tag:focus,
+    .wiring-symbol-tag:hover {
       background: #cfe0f8;
       outline: none;
     }
@@ -459,6 +464,253 @@
       overflow: auto;
     }
 
+    .symbol-terminal-modal {
+      align-items: center;
+      background: rgb(15 23 42 / 55%);
+      display: flex;
+      inset: 0;
+      justify-content: center;
+      padding: 1rem;
+      position: fixed;
+      z-index: 20;
+    }
+
+    .symbol-terminal-modal[hidden] {
+      display: none !important;
+    }
+
+    .symbol-terminal-window {
+      --terminal-window-purple: #ad4ac2;
+      --terminal-cyan: #00ffff;
+      --terminal-green: #00ff00;
+      --terminal-yellow: #ffff00;
+      --terminal-dark-red: #3b0000;
+      --terminal-panel: #000000;
+      --terminal-line: #d9d9d9;
+      --terminal-button: #3b3b3b;
+      background: var(--terminal-panel);
+      border: 1px solid var(--terminal-window-purple);
+      border-radius: 6px;
+      color: #ffffff;
+      font-family: "MS Gothic", "Yu Gothic", "Meiryo", monospace;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      width: min(953px, calc(100vw - 2rem));
+    }
+
+    .symbol-terminal-titlebar {
+      align-items: center;
+      background: var(--terminal-window-purple);
+      color: #ffffff;
+      display: flex;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 12px;
+      height: 32px;
+      justify-content: space-between;
+      padding: 0 8px 0 10px;
+    }
+
+    .symbol-terminal-close {
+      background: transparent;
+      border: 0;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-size: 24px;
+      font-weight: 200;
+      line-height: 1;
+      padding: 0 .25rem;
+    }
+
+    .symbol-terminal-content {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 432px 46px 431px;
+      grid-template-rows: auto 39px;
+      min-height: 670px;
+      padding: 10px 11px 9px;
+    }
+
+    .symbol-terminal-left,
+    .symbol-terminal-center {
+      min-width: 0;
+    }
+
+    .symbol-terminal-top-row {
+      height: 52px;
+    }
+
+    .symbol-terminal-left .symbol-terminal-top-row {
+      align-items: start;
+      display: grid;
+      gap: 2px 8px;
+      grid-template-columns: 128px 166px 1fr;
+      grid-template-rows: 21px 22px;
+    }
+
+    .symbol-terminal-caption {
+      color: var(--terminal-green);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .symbol-terminal-cyan {
+      color: var(--terminal-cyan);
+    }
+
+    .symbol-terminal-build-button,
+    .symbol-terminal-convert-button {
+      background: #eeeeee;
+      border: 2px outset #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .symbol-terminal-build-button {
+      border-style: ridge;
+      font-size: 12px;
+      height: 22px;
+      padding: 0 12px;
+    }
+
+    .symbol-terminal-select-wrap {
+      background: var(--terminal-dark-red);
+      border: 2px inset #bcbcbc;
+      grid-column: 1 / -1;
+      height: 22px;
+      position: relative;
+    }
+
+    .symbol-terminal-select-wrap select {
+      appearance: none;
+      background: transparent;
+      border: 0;
+      color: #ffffff;
+      font: inherit;
+      font-size: 13px;
+      height: 100%;
+      outline: 0;
+      padding: 0 28px 0 8px;
+      width: 100%;
+    }
+
+    .symbol-terminal-select-wrap::after {
+      background: #d9d9d9;
+      border-left: 1px solid #9a9a9a;
+      content: "";
+      height: 18px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 18px;
+    }
+
+    .symbol-terminal-select-wrap::before {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid #111111;
+      content: "";
+      position: absolute;
+      right: 5px;
+      top: 7px;
+      z-index: 1;
+    }
+
+    .symbol-terminal-list {
+      background: #000000;
+      border: 2px groove var(--terminal-line);
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .symbol-terminal-left .symbol-terminal-list {
+      height: 589px;
+    }
+
+    .symbol-terminal-list-text {
+      color: #ffffff;
+      font: inherit;
+      font-size: 14px;
+      line-height: 15px;
+      margin: 0;
+      white-space: pre;
+    }
+
+    .symbol-terminal-left .symbol-terminal-list-text {
+      padding-left: 90px;
+    }
+
+    .symbol-terminal-transfer-column {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      padding-top: 266px;
+    }
+
+    .symbol-terminal-arrow-button {
+      background: var(--terminal-button);
+      border: 2px outset #d7d7d7;
+      color: var(--terminal-yellow);
+      font: inherit;
+      font-size: 28px;
+      height: 48px;
+      line-height: 1;
+      width: 48px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-top-row {
+      align-items: center;
+      display: grid;
+      gap: 0 8px;
+      grid-template-columns: 184px 64px 1fr;
+      grid-template-rows: 26px 22px;
+    }
+
+    .symbol-terminal-device-info {
+      display: grid;
+      font-size: 14px;
+      grid-row: 1 / 3;
+      grid-template-columns: 82px 1fr;
+      row-gap: 8px;
+    }
+
+    .symbol-terminal-device-info .symbol-terminal-value {
+      color: var(--terminal-cyan);
+    }
+
+    .symbol-terminal-convert-button {
+      height: 24px;
+      width: 64px;
+    }
+
+    .symbol-terminal-search-box {
+      background: #000000;
+      border: 2px inset #d7d7d7;
+      height: 23px;
+      width: 168px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-list {
+      height: 572px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-list-text {
+      padding: 2px 10px;
+    }
+
+    .symbol-terminal-confirm-button {
+      background: var(--terminal-button);
+      border: 2px groove #d7d7d7;
+      color: var(--terminal-yellow);
+      font: inherit;
+      font-size: 14px;
+      grid-column: 1 / -1;
+      height: 39px;
+      width: 100%;
+    }
+
     .hint {
       color: #5d677a;
       font-size: .95rem;
@@ -484,7 +736,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V045</span>
+      <span class="version-badge" aria-label="バージョン">V047</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -546,13 +798,16 @@
             <h2>配線リスト</h2>
             <p class="hint">4列100行の配線情報を確認するための一覧です。赤枠のセルを選んだあと、抽出結果のテキストをタッチするとセルへ転記できます。</p>
           </div>
+          <div class="wiring-list-actions">
+            <button id="symbolToTerminalButton" type="button">SymbolToTerminal</button>
+          </div>
           <div class="wiring-table-wrap">
             <table class="wiring-table" aria-label="配線リスト 4列100行">
               <thead>
                 <tr>
                   <th scope="col">Device</th>
                   <th scope="col">LineL</th>
-                  <th scope="col">Connect</th>
+                  <th scope="col">Symbol</th>
                   <th scope="col">LineR</th>
                 </tr>
               </thead>
@@ -1586,6 +1841,77 @@
     </div>
   </main>
 
+  <div id="symbolToTerminalModal" class="symbol-terminal-modal" role="dialog" aria-modal="true" aria-labelledby="symbolToTerminalTitle" hidden>
+    <section class="symbol-terminal-window" aria-label="端子構成表">
+      <div class="symbol-terminal-titlebar">
+        <span id="symbolToTerminalTitle">UserForm6</span>
+        <button id="symbolToTerminalCloseButton" class="symbol-terminal-close" type="button" aria-label="閉じる">×</button>
+      </div>
+
+      <div class="symbol-terminal-content">
+        <div class="symbol-terminal-left">
+          <div class="symbol-terminal-top-row">
+            <div class="symbol-terminal-caption">端子構成表</div>
+            <button class="symbol-terminal-build-button" type="button">端子構成作成</button>
+            <div></div>
+            <div class="symbol-terminal-select-wrap">
+              <select aria-label="製品型式">
+                <option>SB50W</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="symbol-terminal-list" aria-label="端子構成">
+            <pre class="symbol-terminal-list-text">[1]モーター/コンデンサ
+[2]AC100/200
+[3]NON
+[4]制動解除入力
+[5]CCW運転入力
+[6]DC24V
+[7]GND
+[8]CW運転入力
+[9]ALARM
+[10]電磁ブレーキ
+[11]モーター/コンデンサ</pre>
+          </div>
+        </div>
+
+        <div class="symbol-terminal-transfer-column">
+          <button class="symbol-terminal-arrow-button" type="button" aria-label="左へ移動">←</button>
+        </div>
+
+        <div class="symbol-terminal-center">
+          <div class="symbol-terminal-top-row">
+            <div class="symbol-terminal-device-info">
+              <span class="symbol-terminal-cyan">デバイス名:</span>
+              <span class="symbol-terminal-value">BRK12</span>
+              <span class="symbol-terminal-cyan">製品型式:</span>
+              <span class="symbol-terminal-value">SB50W</span>
+            </div>
+            <button class="symbol-terminal-convert-button" type="button">←変換</button>
+            <div class="symbol-terminal-search-box" aria-hidden="true"></div>
+          </div>
+
+          <div class="symbol-terminal-list" aria-label="変換候補">
+            <pre class="symbol-terminal-list-text">V12       [1]モーター/コンデンサ
+R12       [2]AC100/200
+          [3]NON
+Y217      [4]制動解除入力
+Y216      [5]CCW運転入力
+P24       [6]DC24V
+N24       [7]GND
+Y215      [8]CW運転入力
+X202      [9]ALARM
+          [10]電磁ブレーキ
+W12       [11]モーター/コンデンサ</pre>
+          </div>
+        </div>
+
+        <button class="symbol-terminal-confirm-button" type="button">確定</button>
+      </div>
+    </section>
+  </div>
+
   <script type="module">
     import * as pdfjsLib from './vendor/pdfjs/4.10.38/pdf.min.mjs';
 
@@ -1609,6 +1935,9 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
+    const symbolToTerminalButton = document.querySelector('#symbolToTerminalButton');
+    const symbolToTerminalModal = document.querySelector('#symbolToTerminalModal');
+    const symbolToTerminalCloseButton = document.querySelector('#symbolToTerminalCloseButton');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -1641,13 +1970,13 @@
     const minViewScale = 0.75;
     const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
-    const wiringConnectOptions = ['L1→Lo1','L2→Lo2','L3→Lo3','NO', 'NC','LAMP','BUZZ'];
+    const wiringSymbolOptions = ['L1→Lo1','L2→Lo2','L3→Lo3','NO', 'NC','LAMP','BUZZ'];
 
     tabButtons.forEach((button) => button.addEventListener('click', () => selectTab(button)));
     wiringTable.addEventListener('click', selectWiringCell);
     wiringTable.addEventListener('dblclick', enableWiringCellKeyboardInputWithMouse);
     wiringTable.addEventListener('pointerup', enableWiringCellKeyboardInputOnDoubleTap);
-    initializeWiringConnectCells();
+    initializeWiringSymbolCells();
     wiringTable.querySelectorAll('td').forEach((cell) => {
       cell.tabIndex = 0;
       cell.addEventListener('keydown', selectWiringCellWithKeyboard);
@@ -1655,30 +1984,30 @@
       cell.addEventListener('input', registerEditedWiringDeviceInPartsList);
     });
 
-    function initializeWiringConnectCells() {
+    function initializeWiringSymbolCells() {
       wiringTable.querySelectorAll('tbody tr td:nth-child(3)').forEach((cell, index) => {
         const input = document.createElement('input');
         const tagList = document.createElement('div');
 
-        cell.classList.add('wiring-connect-cell');
-        input.className = 'wiring-connect-input';
+        cell.classList.add('wiring-symbol-cell');
+        input.className = 'wiring-symbol-input';
         input.type = 'text';
         input.inputMode = 'text';
         input.autocomplete = 'off';
         input.readOnly = true;
         input.tabIndex = -1;
-        input.setAttribute('aria-label', `Connect ${index + 1}`);
-        input.addEventListener('dblclick', enableConnectKeyboardInput);
-        input.addEventListener('blur', lockConnectKeyboardInput);
+        input.setAttribute('aria-label', `Symbol ${index + 1}`);
+        input.addEventListener('dblclick', enableSymbolKeyboardInput);
+        input.addEventListener('blur', lockSymbolKeyboardInput);
 
-        tagList.className = 'wiring-connect-tags';
-        tagList.setAttribute('aria-label', `Connect ${index + 1} 候補`);
-        wiringConnectOptions.forEach((optionText) => {
+        tagList.className = 'wiring-symbol-tags';
+        tagList.setAttribute('aria-label', `Symbol ${index + 1} 候補`);
+        wiringSymbolOptions.forEach((optionText) => {
           const optionButton = document.createElement('button');
-          optionButton.className = 'wiring-connect-tag';
+          optionButton.className = 'wiring-symbol-tag';
           optionButton.type = 'button';
           optionButton.textContent = optionText;
-          optionButton.addEventListener('click', selectConnectTag);
+          optionButton.addEventListener('click', selectSymbolTag);
           tagList.append(optionButton);
         });
 
@@ -1698,7 +2027,7 @@
 
       const clickCount = event.detail || 1;
       if (clickCount < 2) {
-        lockAllConnectKeyboardInputs();
+        lockAllSymbolKeyboardInputs();
         lockOtherWiringCellKeyboardInputs();
       }
 
@@ -1709,25 +2038,25 @@
       selectedWiringCell = cell;
       selectedWiringCell.classList.add('selected-wiring-cell');
 
-      if (!isWiringConnectCell(cell)) {
-        hideConnectTags();
+      if (!isWiringSymbolCell(cell)) {
+        hideSymbolTags();
         if (clickCount >= 2) enableWiringCellKeyboardInput(cell);
         return;
       }
 
       if (clickCount >= 2) {
-        const input = cell.querySelector('.wiring-connect-input');
-        if (input) enableConnectKeyboardInput({ currentTarget: input });
+        const input = cell.querySelector('.wiring-symbol-input');
+        if (input) enableSymbolKeyboardInput({ currentTarget: input });
         return;
       }
 
-      showConnectTags(cell);
+      showSymbolTags(cell);
     }
 
 
     function enableWiringCellKeyboardInputWithMouse(event) {
       const cell = event.target.closest('td');
-      if (!cell || !wiringTable.contains(cell) || isWiringConnectCell(cell)) return;
+      if (!cell || !wiringTable.contains(cell) || isWiringSymbolCell(cell)) return;
 
       enableWiringCellKeyboardInput(cell);
     }
@@ -1745,9 +2074,9 @@
 
       event.preventDefault();
       suppressWiringCellSelectionUntil = Date.now() + 700;
-      if (isWiringConnectCell(cell)) {
-        const input = cell.querySelector('.wiring-connect-input');
-        if (input) enableConnectKeyboardInput({ currentTarget: input });
+      if (isWiringSymbolCell(cell)) {
+        const input = cell.querySelector('.wiring-symbol-input');
+        if (input) enableSymbolKeyboardInput({ currentTarget: input });
         return;
       }
 
@@ -1755,9 +2084,9 @@
     }
 
     function enableWiringCellKeyboardInput(cell) {
-      if (!cell || isWiringConnectCell(cell)) return;
+      if (!cell || isWiringSymbolCell(cell)) return;
 
-      lockAllConnectKeyboardInputs();
+      lockAllSymbolKeyboardInputs();
       lockOtherWiringCellKeyboardInputs(cell);
       cell.contentEditable = 'true';
       cell.focus({ preventScroll: true });
@@ -1788,33 +2117,33 @@
       registerWiringDeviceInPartsList(cell, cell.textContent.trim());
     }
 
-    function showConnectTags(cell) {
-      hideConnectTags(cell);
-      cell.classList.add('show-connect-tags');
+    function showSymbolTags(cell) {
+      hideSymbolTags(cell);
+      cell.classList.add('show-symbol-tags');
     }
 
-    function hideConnectTags(exceptCell = null) {
-      wiringTable.querySelectorAll('.wiring-connect-cell.show-connect-tags').forEach((cell) => {
-        if (cell !== exceptCell) cell.classList.remove('show-connect-tags');
+    function hideSymbolTags(exceptCell = null) {
+      wiringTable.querySelectorAll('.wiring-symbol-cell.show-symbol-tags').forEach((cell) => {
+        if (cell !== exceptCell) cell.classList.remove('show-symbol-tags');
       });
     }
 
-    function selectConnectTag(event) {
+    function selectSymbolTag(event) {
       event.stopPropagation();
       const tagButton = event.currentTarget;
       const cell = tagButton.closest('td');
       if (!cell) return;
 
       setWiringCellValue(cell, tagButton.textContent.trim());
-      cell.classList.remove('show-connect-tags');
+      cell.classList.remove('show-symbol-tags');
     }
 
-    function enableConnectKeyboardInput(event, options = {}) {
+    function enableSymbolKeyboardInput(event, options = {}) {
       const input = event.currentTarget;
       const cell = input.closest('td');
       if (!cell) return;
 
-      if (options.hideTags !== false) hideConnectTags();
+      if (options.hideTags !== false) hideSymbolTags();
       input.readOnly = false;
       input.tabIndex = 0;
       input.focus({ preventScroll: true });
@@ -1822,13 +2151,13 @@
     }
 
 
-    function lockConnectKeyboardInput(event) {
+    function lockSymbolKeyboardInput(event) {
       event.currentTarget.readOnly = true;
       event.currentTarget.tabIndex = -1;
     }
 
-    function lockAllConnectKeyboardInputs() {
-      wiringTable.querySelectorAll('.wiring-connect-input:not([readonly])').forEach((input) => {
+    function lockAllSymbolKeyboardInputs() {
+      wiringTable.querySelectorAll('.wiring-symbol-input:not([readonly])').forEach((input) => {
         input.readOnly = true;
         input.tabIndex = -1;
       });
@@ -1875,6 +2204,10 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
+    symbolToTerminalButton.addEventListener('click', openSymbolToTerminal);
+    symbolToTerminalCloseButton.addEventListener('click', closeSymbolToTerminal);
+    symbolToTerminalModal.addEventListener('click', closeSymbolToTerminalOnBackdrop);
+    document.addEventListener('keydown', closeSymbolToTerminalWithEscape);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', handleExtractionResultClick);
     result.addEventListener('dblclick', enableExtractionResultLineEditing);
@@ -1895,6 +2228,24 @@
     extractButton.addEventListener('click', () => {
       appendUnextractedOutlines();
     });
+
+    function openSymbolToTerminal() {
+      symbolToTerminalModal.hidden = false;
+      symbolToTerminalCloseButton.focus({ preventScroll: true });
+    }
+
+    function closeSymbolToTerminal() {
+      symbolToTerminalModal.hidden = true;
+      symbolToTerminalButton.focus({ preventScroll: true });
+    }
+
+    function closeSymbolToTerminalOnBackdrop(event) {
+      if (event.target === symbolToTerminalModal) closeSymbolToTerminal();
+    }
+
+    function closeSymbolToTerminalWithEscape(event) {
+      if (event.key === 'Escape' && !symbolToTerminalModal.hidden) closeSymbolToTerminal();
+    }
 
     drawCanvas.addEventListener('pointerdown', (event) => {
       if (!currentPage) return;
@@ -2344,7 +2695,7 @@
     }
 
     function setWiringCellValue(cell, value) {
-      if (isWiringConnectCell(cell)) {
+      if (isWiringSymbolCell(cell)) {
         const input = cell.querySelector('input');
         if (input) input.value = value;
         return;
@@ -2370,7 +2721,7 @@
       return cell.cellIndex === 0 && cell.closest('table') === wiringTable;
     }
 
-    function isWiringConnectCell(cell) {
+    function isWiringSymbolCell(cell) {
       return cell.cellIndex === 2 && cell.closest('table') === wiringTable;
     }
 
