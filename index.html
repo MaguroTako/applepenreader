@@ -163,11 +163,11 @@
       outline: none;
     }
 
-    .wiring-connect-cell {
+    .wiring-symbol-cell {
       position: relative;
     }
 
-    .wiring-connect-input {
+    .wiring-symbol-input {
       background: transparent;
       border: 0;
       box-sizing: border-box;
@@ -178,17 +178,17 @@
       width: 100%;
     }
 
-    .wiring-connect-input:focus {
+    .wiring-symbol-input:focus {
       outline: none;
     }
 
-    .wiring-connect-input[readonly] {
+    .wiring-symbol-input[readonly] {
       caret-color: transparent;
       cursor: pointer;
       pointer-events: none;
     }
 
-    .wiring-connect-tags {
+    .wiring-symbol-tags {
       background: #ffffff;
       border: 1px solid #b7c4d8;
       border-radius: .75rem;
@@ -204,11 +204,11 @@
       z-index: 5;
     }
 
-    .wiring-connect-cell.show-connect-tags .wiring-connect-tags {
+    .wiring-symbol-cell.show-symbol-tags .wiring-symbol-tags {
       display: flex;
     }
 
-    .wiring-connect-tag {
+    .wiring-symbol-tag {
       background: #e7eefb;
       border: 1px solid #8fb0df;
       border-radius: 999px;
@@ -219,8 +219,8 @@
     }
 
 
-    .wiring-connect-tag:focus,
-    .wiring-connect-tag:hover {
+    .wiring-symbol-tag:focus,
+    .wiring-symbol-tag:hover {
       background: #cfe0f8;
       outline: none;
     }
@@ -489,7 +489,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V045</span>
+      <span class="version-badge" aria-label="バージョン">V046</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -552,7 +552,7 @@
             <p class="hint">4列100行の配線情報を確認するための一覧です。赤枠のセルを選んだあと、抽出結果のテキストをタッチするとセルへ転記できます。</p>
           </div>
           <div class="wiring-list-actions">
-            <button id="connectToTerminalButton" type="button">ConnectToTerminal</button>
+            <button id="symbolToTerminalButton" type="button">SymbolToTerminal</button>
           </div>
           <div class="wiring-table-wrap">
             <table class="wiring-table" aria-label="配線リスト 4列100行">
@@ -560,7 +560,7 @@
                 <tr>
                   <th scope="col">Device</th>
                   <th scope="col">LineL</th>
-                  <th scope="col">Connect</th>
+                  <th scope="col">Symbol</th>
                   <th scope="col">LineR</th>
                 </tr>
               </thead>
@@ -1617,7 +1617,7 @@
     const resetResultButton = document.querySelector('#resetResultButton');
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
-    const connectToTerminalButton = document.querySelector('#connectToTerminalButton');
+    const symbolToTerminalButton = document.querySelector('#symbolToTerminalButton');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -1650,13 +1650,13 @@
     const minViewScale = 0.75;
     const maxViewScale = 4;
     const defaultResultText = 'まだ抽出されていません。';
-    const wiringConnectOptions = ['L1→Lo1','L2→Lo2','L3→Lo3','NO', 'NC','LAMP','BUZZ'];
+    const wiringSymbolOptions = ['L1→Lo1','L2→Lo2','L3→Lo3','NO', 'NC','LAMP','BUZZ'];
 
     tabButtons.forEach((button) => button.addEventListener('click', () => selectTab(button)));
     wiringTable.addEventListener('click', selectWiringCell);
     wiringTable.addEventListener('dblclick', enableWiringCellKeyboardInputWithMouse);
     wiringTable.addEventListener('pointerup', enableWiringCellKeyboardInputOnDoubleTap);
-    initializeWiringConnectCells();
+    initializeWiringSymbolCells();
     wiringTable.querySelectorAll('td').forEach((cell) => {
       cell.tabIndex = 0;
       cell.addEventListener('keydown', selectWiringCellWithKeyboard);
@@ -1664,30 +1664,30 @@
       cell.addEventListener('input', registerEditedWiringDeviceInPartsList);
     });
 
-    function initializeWiringConnectCells() {
+    function initializeWiringSymbolCells() {
       wiringTable.querySelectorAll('tbody tr td:nth-child(3)').forEach((cell, index) => {
         const input = document.createElement('input');
         const tagList = document.createElement('div');
 
-        cell.classList.add('wiring-connect-cell');
-        input.className = 'wiring-connect-input';
+        cell.classList.add('wiring-symbol-cell');
+        input.className = 'wiring-symbol-input';
         input.type = 'text';
         input.inputMode = 'text';
         input.autocomplete = 'off';
         input.readOnly = true;
         input.tabIndex = -1;
-        input.setAttribute('aria-label', `Connect ${index + 1}`);
-        input.addEventListener('dblclick', enableConnectKeyboardInput);
-        input.addEventListener('blur', lockConnectKeyboardInput);
+        input.setAttribute('aria-label', `Symbol ${index + 1}`);
+        input.addEventListener('dblclick', enableSymbolKeyboardInput);
+        input.addEventListener('blur', lockSymbolKeyboardInput);
 
-        tagList.className = 'wiring-connect-tags';
-        tagList.setAttribute('aria-label', `Connect ${index + 1} 候補`);
-        wiringConnectOptions.forEach((optionText) => {
+        tagList.className = 'wiring-symbol-tags';
+        tagList.setAttribute('aria-label', `Symbol ${index + 1} 候補`);
+        wiringSymbolOptions.forEach((optionText) => {
           const optionButton = document.createElement('button');
-          optionButton.className = 'wiring-connect-tag';
+          optionButton.className = 'wiring-symbol-tag';
           optionButton.type = 'button';
           optionButton.textContent = optionText;
-          optionButton.addEventListener('click', selectConnectTag);
+          optionButton.addEventListener('click', selectSymbolTag);
           tagList.append(optionButton);
         });
 
@@ -1707,7 +1707,7 @@
 
       const clickCount = event.detail || 1;
       if (clickCount < 2) {
-        lockAllConnectKeyboardInputs();
+        lockAllSymbolKeyboardInputs();
         lockOtherWiringCellKeyboardInputs();
       }
 
@@ -1718,25 +1718,25 @@
       selectedWiringCell = cell;
       selectedWiringCell.classList.add('selected-wiring-cell');
 
-      if (!isWiringConnectCell(cell)) {
-        hideConnectTags();
+      if (!isWiringSymbolCell(cell)) {
+        hideSymbolTags();
         if (clickCount >= 2) enableWiringCellKeyboardInput(cell);
         return;
       }
 
       if (clickCount >= 2) {
-        const input = cell.querySelector('.wiring-connect-input');
-        if (input) enableConnectKeyboardInput({ currentTarget: input });
+        const input = cell.querySelector('.wiring-symbol-input');
+        if (input) enableSymbolKeyboardInput({ currentTarget: input });
         return;
       }
 
-      showConnectTags(cell);
+      showSymbolTags(cell);
     }
 
 
     function enableWiringCellKeyboardInputWithMouse(event) {
       const cell = event.target.closest('td');
-      if (!cell || !wiringTable.contains(cell) || isWiringConnectCell(cell)) return;
+      if (!cell || !wiringTable.contains(cell) || isWiringSymbolCell(cell)) return;
 
       enableWiringCellKeyboardInput(cell);
     }
@@ -1754,9 +1754,9 @@
 
       event.preventDefault();
       suppressWiringCellSelectionUntil = Date.now() + 700;
-      if (isWiringConnectCell(cell)) {
-        const input = cell.querySelector('.wiring-connect-input');
-        if (input) enableConnectKeyboardInput({ currentTarget: input });
+      if (isWiringSymbolCell(cell)) {
+        const input = cell.querySelector('.wiring-symbol-input');
+        if (input) enableSymbolKeyboardInput({ currentTarget: input });
         return;
       }
 
@@ -1764,9 +1764,9 @@
     }
 
     function enableWiringCellKeyboardInput(cell) {
-      if (!cell || isWiringConnectCell(cell)) return;
+      if (!cell || isWiringSymbolCell(cell)) return;
 
-      lockAllConnectKeyboardInputs();
+      lockAllSymbolKeyboardInputs();
       lockOtherWiringCellKeyboardInputs(cell);
       cell.contentEditable = 'true';
       cell.focus({ preventScroll: true });
@@ -1797,33 +1797,33 @@
       registerWiringDeviceInPartsList(cell, cell.textContent.trim());
     }
 
-    function showConnectTags(cell) {
-      hideConnectTags(cell);
-      cell.classList.add('show-connect-tags');
+    function showSymbolTags(cell) {
+      hideSymbolTags(cell);
+      cell.classList.add('show-symbol-tags');
     }
 
-    function hideConnectTags(exceptCell = null) {
-      wiringTable.querySelectorAll('.wiring-connect-cell.show-connect-tags').forEach((cell) => {
-        if (cell !== exceptCell) cell.classList.remove('show-connect-tags');
+    function hideSymbolTags(exceptCell = null) {
+      wiringTable.querySelectorAll('.wiring-symbol-cell.show-symbol-tags').forEach((cell) => {
+        if (cell !== exceptCell) cell.classList.remove('show-symbol-tags');
       });
     }
 
-    function selectConnectTag(event) {
+    function selectSymbolTag(event) {
       event.stopPropagation();
       const tagButton = event.currentTarget;
       const cell = tagButton.closest('td');
       if (!cell) return;
 
       setWiringCellValue(cell, tagButton.textContent.trim());
-      cell.classList.remove('show-connect-tags');
+      cell.classList.remove('show-symbol-tags');
     }
 
-    function enableConnectKeyboardInput(event, options = {}) {
+    function enableSymbolKeyboardInput(event, options = {}) {
       const input = event.currentTarget;
       const cell = input.closest('td');
       if (!cell) return;
 
-      if (options.hideTags !== false) hideConnectTags();
+      if (options.hideTags !== false) hideSymbolTags();
       input.readOnly = false;
       input.tabIndex = 0;
       input.focus({ preventScroll: true });
@@ -1831,13 +1831,13 @@
     }
 
 
-    function lockConnectKeyboardInput(event) {
+    function lockSymbolKeyboardInput(event) {
       event.currentTarget.readOnly = true;
       event.currentTarget.tabIndex = -1;
     }
 
-    function lockAllConnectKeyboardInputs() {
-      wiringTable.querySelectorAll('.wiring-connect-input:not([readonly])').forEach((input) => {
+    function lockAllSymbolKeyboardInputs() {
+      wiringTable.querySelectorAll('.wiring-symbol-input:not([readonly])').forEach((input) => {
         input.readOnly = true;
         input.tabIndex = -1;
       });
@@ -1884,7 +1884,7 @@
     });
 
     clearButton.addEventListener('click', clearDrawing);
-    connectToTerminalButton.addEventListener('click', openConnectToTerminal);
+    symbolToTerminalButton.addEventListener('click', openSymbolToTerminal);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', handleExtractionResultClick);
     result.addEventListener('dblclick', enableExtractionResultLineEditing);
@@ -1906,7 +1906,7 @@
       appendUnextractedOutlines();
     });
 
-    function openConnectToTerminal() {
+    function openSymbolToTerminal() {
       const popupWidth = 953;
       const popupHeight = 704;
       const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - popupWidth) / 2));
@@ -1925,7 +1925,7 @@
         'scrollbars=no',
       ].join(',');
 
-      window.open('connecttoterminal.html', 'ConnectToTerminal', features);
+      window.open('SymbolToTerminal.html', 'SymbolToTerminal', features);
     }
 
     drawCanvas.addEventListener('pointerdown', (event) => {
@@ -2376,7 +2376,7 @@
     }
 
     function setWiringCellValue(cell, value) {
-      if (isWiringConnectCell(cell)) {
+      if (isWiringSymbolCell(cell)) {
         const input = cell.querySelector('input');
         if (input) input.value = value;
         return;
@@ -2402,7 +2402,7 @@
       return cell.cellIndex === 0 && cell.closest('table') === wiringTable;
     }
 
-    function isWiringConnectCell(cell) {
+    function isWiringSymbolCell(cell) {
       return cell.cellIndex === 2 && cell.closest('table') === wiringTable;
     }
 
