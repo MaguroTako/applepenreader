@@ -5,7 +5,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 ## What it does
 
 - Opens a local PDF from a browser file input inside the PDF tab.
-- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries, highlights the touched cell with a red border while restoring the previous cell border, shows registered **Symbol** strings as tappable tags on a single click/tap, allows keyboard entry in every wiring-list cell including **Symbol** cells with a double click/tap, and copies a tapped extraction-result row into the selected red-bordered cell.
+- Adds a **配線リスト** tab with a 4-column, 100-row wiring table for checking wiring entries, highlights the touched cell with a red border while restoring the previous cell border, shows registered **Symbol** strings as tappable tags on a single click/tap, opens the Symbol-to-terminal view in an in-page modal, allows keyboard entry in every wiring-list cell including **Symbol** cells with a double click/tap, and copies a tapped extraction-result row into the selected red-bordered cell.
 - Adds a **部品リスト** tab with a 2-column, 100-row parts table headed **Device** and **TypeName**, and registers each unique value copied into the wiring-list **Device** column into the first empty parts-list **Device** cell.
 - Extracts and keeps all PDF text in memory before showing the first page.
 - Renders the selected page with PDF.js inside a PDF tab that also contains the file input, extraction controls, debug toggle, previous/next page navigation, and a current-page/total-page count.
@@ -39,7 +39,7 @@ Apple Pen Reader is an HTML prototype for opening a PDF in the browser, drawing 
 
 2. Open `http://localhost:8000/` in a browser.
 3. Open the **PDF** tab, tap **ファイルを選択**, and choose a PDF.
-4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table. Tap a wiring-list cell to mark its border red; tapping another cell restores the previous cell and marks the new one. Double-tap a wiring-list cell with a finger when you want to type with the iPad software keyboard; Apple Pencil/stylus taps select cells but do not open editing. Single-click/tap a **Symbol** cell to show registered strings as tags and select one; double-click/tap the cell when you want to type another value with the iPad software keyboard.
+4. Open the **配線リスト** tab when you want to view the 4-column, 100-row wiring table. Tap a wiring-list cell to mark its border red; tapping another cell restores the previous cell and marks the new one. Tap **SymbolToTerminal** to open the terminal view in a modal. Double-tap a wiring-list cell with a finger when you want to type with the iPad software keyboard; Apple Pencil/stylus taps select cells but do not open editing. Single-click/tap a **Symbol** cell to show registered strings as tags and select one; double-click/tap the cell when you want to type another value with the iPad software keyboard.
 5. Open the **部品リスト** tab when you want to view the 2-column, 100-row parts table with **Device** and **TypeName** headings.
 6. Use one finger to move the page or two fingers to pinch-zoom the page. Draw a balloon around text with Apple Pencil. On desktop browsers, a mouse can still be used as a fallback for quick checks.
 7. If the PDF has multiple pages, use **前のページ** and **次のページ** while checking the page count shown as `current / total`.

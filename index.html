@@ -464,6 +464,253 @@
       overflow: auto;
     }
 
+    .symbol-terminal-modal {
+      align-items: center;
+      background: rgb(15 23 42 / 55%);
+      display: flex;
+      inset: 0;
+      justify-content: center;
+      padding: 1rem;
+      position: fixed;
+      z-index: 20;
+    }
+
+    .symbol-terminal-modal[hidden] {
+      display: none !important;
+    }
+
+    .symbol-terminal-window {
+      --terminal-window-purple: #ad4ac2;
+      --terminal-cyan: #00ffff;
+      --terminal-green: #00ff00;
+      --terminal-yellow: #ffff00;
+      --terminal-dark-red: #3b0000;
+      --terminal-panel: #000000;
+      --terminal-line: #d9d9d9;
+      --terminal-button: #3b3b3b;
+      background: var(--terminal-panel);
+      border: 1px solid var(--terminal-window-purple);
+      border-radius: 6px;
+      color: #ffffff;
+      font-family: "MS Gothic", "Yu Gothic", "Meiryo", monospace;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      width: min(953px, calc(100vw - 2rem));
+    }
+
+    .symbol-terminal-titlebar {
+      align-items: center;
+      background: var(--terminal-window-purple);
+      color: #ffffff;
+      display: flex;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 12px;
+      height: 32px;
+      justify-content: space-between;
+      padding: 0 8px 0 10px;
+    }
+
+    .symbol-terminal-close {
+      background: transparent;
+      border: 0;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-size: 24px;
+      font-weight: 200;
+      line-height: 1;
+      padding: 0 .25rem;
+    }
+
+    .symbol-terminal-content {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 432px 46px 431px;
+      grid-template-rows: auto 39px;
+      min-height: 670px;
+      padding: 10px 11px 9px;
+    }
+
+    .symbol-terminal-left,
+    .symbol-terminal-center {
+      min-width: 0;
+    }
+
+    .symbol-terminal-top-row {
+      height: 52px;
+    }
+
+    .symbol-terminal-left .symbol-terminal-top-row {
+      align-items: start;
+      display: grid;
+      gap: 2px 8px;
+      grid-template-columns: 128px 166px 1fr;
+      grid-template-rows: 21px 22px;
+    }
+
+    .symbol-terminal-caption {
+      color: var(--terminal-green);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .symbol-terminal-cyan {
+      color: var(--terminal-cyan);
+    }
+
+    .symbol-terminal-build-button,
+    .symbol-terminal-convert-button {
+      background: #eeeeee;
+      border: 2px outset #ffffff;
+      color: #111111;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .symbol-terminal-build-button {
+      border-style: ridge;
+      font-size: 12px;
+      height: 22px;
+      padding: 0 12px;
+    }
+
+    .symbol-terminal-select-wrap {
+      background: var(--terminal-dark-red);
+      border: 2px inset #bcbcbc;
+      grid-column: 1 / -1;
+      height: 22px;
+      position: relative;
+    }
+
+    .symbol-terminal-select-wrap select {
+      appearance: none;
+      background: transparent;
+      border: 0;
+      color: #ffffff;
+      font: inherit;
+      font-size: 13px;
+      height: 100%;
+      outline: 0;
+      padding: 0 28px 0 8px;
+      width: 100%;
+    }
+
+    .symbol-terminal-select-wrap::after {
+      background: #d9d9d9;
+      border-left: 1px solid #9a9a9a;
+      content: "";
+      height: 18px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 18px;
+    }
+
+    .symbol-terminal-select-wrap::before {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid #111111;
+      content: "";
+      position: absolute;
+      right: 5px;
+      top: 7px;
+      z-index: 1;
+    }
+
+    .symbol-terminal-list {
+      background: #000000;
+      border: 2px groove var(--terminal-line);
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .symbol-terminal-left .symbol-terminal-list {
+      height: 589px;
+    }
+
+    .symbol-terminal-list-text {
+      color: #ffffff;
+      font: inherit;
+      font-size: 14px;
+      line-height: 15px;
+      margin: 0;
+      white-space: pre;
+    }
+
+    .symbol-terminal-left .symbol-terminal-list-text {
+      padding-left: 90px;
+    }
+
+    .symbol-terminal-transfer-column {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      padding-top: 266px;
+    }
+
+    .symbol-terminal-arrow-button {
+      background: var(--terminal-button);
+      border: 2px outset #d7d7d7;
+      color: var(--terminal-yellow);
+      font: inherit;
+      font-size: 28px;
+      height: 48px;
+      line-height: 1;
+      width: 48px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-top-row {
+      align-items: center;
+      display: grid;
+      gap: 0 8px;
+      grid-template-columns: 184px 64px 1fr;
+      grid-template-rows: 26px 22px;
+    }
+
+    .symbol-terminal-device-info {
+      display: grid;
+      font-size: 14px;
+      grid-row: 1 / 3;
+      grid-template-columns: 82px 1fr;
+      row-gap: 8px;
+    }
+
+    .symbol-terminal-device-info .symbol-terminal-value {
+      color: var(--terminal-cyan);
+    }
+
+    .symbol-terminal-convert-button {
+      height: 24px;
+      width: 64px;
+    }
+
+    .symbol-terminal-search-box {
+      background: #000000;
+      border: 2px inset #d7d7d7;
+      height: 23px;
+      width: 168px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-list {
+      height: 572px;
+    }
+
+    .symbol-terminal-center .symbol-terminal-list-text {
+      padding: 2px 10px;
+    }
+
+    .symbol-terminal-confirm-button {
+      background: var(--terminal-button);
+      border: 2px groove #d7d7d7;
+      color: var(--terminal-yellow);
+      font: inherit;
+      font-size: 14px;
+      grid-column: 1 / -1;
+      height: 39px;
+      width: 100%;
+    }
+
     .hint {
       color: #5d677a;
       font-size: .95rem;
@@ -489,7 +736,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V046</span>
+      <span class="version-badge" aria-label="バージョン">V047</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1594,6 +1841,77 @@
     </div>
   </main>
 
+  <div id="symbolToTerminalModal" class="symbol-terminal-modal" role="dialog" aria-modal="true" aria-labelledby="symbolToTerminalTitle" hidden>
+    <section class="symbol-terminal-window" aria-label="端子構成表">
+      <div class="symbol-terminal-titlebar">
+        <span id="symbolToTerminalTitle">UserForm6</span>
+        <button id="symbolToTerminalCloseButton" class="symbol-terminal-close" type="button" aria-label="閉じる">×</button>
+      </div>
+
+      <div class="symbol-terminal-content">
+        <div class="symbol-terminal-left">
+          <div class="symbol-terminal-top-row">
+            <div class="symbol-terminal-caption">端子構成表</div>
+            <button class="symbol-terminal-build-button" type="button">端子構成作成</button>
+            <div></div>
+            <div class="symbol-terminal-select-wrap">
+              <select aria-label="製品型式">
+                <option>SB50W</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="symbol-terminal-list" aria-label="端子構成">
+            <pre class="symbol-terminal-list-text">[1]モーター/コンデンサ
+[2]AC100/200
+[3]NON
+[4]制動解除入力
+[5]CCW運転入力
+[6]DC24V
+[7]GND
+[8]CW運転入力
+[9]ALARM
+[10]電磁ブレーキ
+[11]モーター/コンデンサ</pre>
+          </div>
+        </div>
+
+        <div class="symbol-terminal-transfer-column">
+          <button class="symbol-terminal-arrow-button" type="button" aria-label="左へ移動">←</button>
+        </div>
+
+        <div class="symbol-terminal-center">
+          <div class="symbol-terminal-top-row">
+            <div class="symbol-terminal-device-info">
+              <span class="symbol-terminal-cyan">デバイス名:</span>
+              <span class="symbol-terminal-value">BRK12</span>
+              <span class="symbol-terminal-cyan">製品型式:</span>
+              <span class="symbol-terminal-value">SB50W</span>
+            </div>
+            <button class="symbol-terminal-convert-button" type="button">←変換</button>
+            <div class="symbol-terminal-search-box" aria-hidden="true"></div>
+          </div>
+
+          <div class="symbol-terminal-list" aria-label="変換候補">
+            <pre class="symbol-terminal-list-text">V12       [1]モーター/コンデンサ
+R12       [2]AC100/200
+          [3]NON
+Y217      [4]制動解除入力
+Y216      [5]CCW運転入力
+P24       [6]DC24V
+N24       [7]GND
+Y215      [8]CW運転入力
+X202      [9]ALARM
+          [10]電磁ブレーキ
+W12       [11]モーター/コンデンサ</pre>
+          </div>
+        </div>
+
+        <button class="symbol-terminal-confirm-button" type="button">確定</button>
+      </div>
+    </section>
+  </div>
+
   <script type="module">
     import * as pdfjsLib from './vendor/pdfjs/4.10.38/pdf.min.mjs';
 
@@ -1618,6 +1936,8 @@
     const detectedText = document.querySelector('#detectedText');
     const resetDetectedTextButton = document.querySelector('#resetDetectedTextButton');
     const symbolToTerminalButton = document.querySelector('#symbolToTerminalButton');
+    const symbolToTerminalModal = document.querySelector('#symbolToTerminalModal');
+    const symbolToTerminalCloseButton = document.querySelector('#symbolToTerminalCloseButton');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -1885,6 +2205,9 @@
 
     clearButton.addEventListener('click', clearDrawing);
     symbolToTerminalButton.addEventListener('click', openSymbolToTerminal);
+    symbolToTerminalCloseButton.addEventListener('click', closeSymbolToTerminal);
+    symbolToTerminalModal.addEventListener('click', closeSymbolToTerminalOnBackdrop);
+    document.addEventListener('keydown', closeSymbolToTerminalWithEscape);
     resetResultButton.addEventListener('click', resetExtractionResult);
     result.addEventListener('click', handleExtractionResultClick);
     result.addEventListener('dblclick', enableExtractionResultLineEditing);
@@ -1907,25 +2230,21 @@
     });
 
     function openSymbolToTerminal() {
-      const popupWidth = 953;
-      const popupHeight = 704;
-      const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - popupWidth) / 2));
-      const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - popupHeight) / 2));
-      const features = [
-        `width=${popupWidth}`,
-        `height=${popupHeight}`,
-        `left=${left}`,
-        `top=${top}`,
-        'popup=yes',
-        'toolbar=no',
-        'menubar=no',
-        'location=no',
-        'status=no',
-        'resizable=no',
-        'scrollbars=no',
-      ].join(',');
+      symbolToTerminalModal.hidden = false;
+      symbolToTerminalCloseButton.focus({ preventScroll: true });
+    }
 
-      window.open('SymbolToTerminal.html', 'SymbolToTerminal', features);
+    function closeSymbolToTerminal() {
+      symbolToTerminalModal.hidden = true;
+      symbolToTerminalButton.focus({ preventScroll: true });
+    }
+
+    function closeSymbolToTerminalOnBackdrop(event) {
+      if (event.target === symbolToTerminalModal) closeSymbolToTerminal();
+    }
+
+    function closeSymbolToTerminalWithEscape(event) {
+      if (event.key === 'Escape' && !symbolToTerminalModal.hidden) closeSymbolToTerminal();
     }
 
     drawCanvas.addEventListener('pointerdown', (event) => {
