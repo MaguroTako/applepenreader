@@ -736,7 +736,7 @@
 <body>
   <header>
     <div class="app-title">
-      <span class="version-badge" aria-label="バージョン">V048</span>
+      <span class="version-badge" aria-label="バージョン">V051</span>
       <h1>Apple Pen Reader</h1>
     </div>
   </header>
@@ -1893,17 +1893,7 @@
           </div>
 
           <div class="symbol-terminal-list" aria-label="変換候補">
-            <pre class="symbol-terminal-list-text">V12       [1]モーター/コンデンサ
-R12       [2]AC100/200
-          [3]NON
-Y217      [4]制動解除入力
-Y216      [5]CCW運転入力
-P24       [6]DC24V
-N24       [7]GND
-Y215      [8]CW運転入力
-X202      [9]ALARM
-          [10]電磁ブレーキ
-W12       [11]モーター/コンデンサ</pre>
+            <pre id="symbolToTerminalWiringListText" class="symbol-terminal-list-text"></pre>
           </div>
         </div>
 
@@ -1941,6 +1931,7 @@ W12       [11]モーター/コンデンサ</pre>
     const symbolToTerminalTypeSelect = document.querySelector('#symbolToTerminalTypeSelect');
     const symbolToTerminalDeviceValue = document.querySelector('#symbolToTerminalDeviceValue');
     const symbolToTerminalTypeValue = document.querySelector('#symbolToTerminalTypeValue');
+    const symbolToTerminalWiringListText = document.querySelector('#symbolToTerminalWiringListText');
     const wiringTable = document.querySelector('[aria-label="配線リスト 4列100行"]');
     const partsTable = document.querySelector('[aria-label="部品リスト 2列100行"]');
     const pdfContext = pdfCanvas.getContext('2d');
@@ -2245,12 +2236,70 @@ W12       [11]モーター/コンデンサ</pre>
       symbolToTerminalDeviceValue.textContent = deviceText;
       symbolToTerminalTypeValue.textContent = typeNameText;
       symbolToTerminalTypeSelect.replaceChildren(new Option(typeNameText, typeNameText));
+      symbolToTerminalWiringListText.textContent = buildSymbolToTerminalWiringListText(deviceText);
     }
 
     function getSelectedWiringRowDeviceText() {
       const selectedRow = selectedWiringCell?.closest('tr');
-      const deviceCell = selectedRow?.cells[0];
-      return deviceCell?.textContent.trim() || '';
+      return getWiringRowDeviceText(selectedRow);
+    }
+
+    function getWiringRowDeviceText(row) {
+      if (!row) return '';
+
+      const rows = [...wiringTable.querySelectorAll('tbody tr')];
+      const startIndex = rows.indexOf(row);
+      if (startIndex < 0) return '';
+
+      for (let index = startIndex; index >= 0; index -= 1) {
+        const deviceText = getWiringCellText(rows[index].cells[0]);
+        if (deviceText) return deviceText;
+      }
+
+      return '';
+    }
+
+    function buildSymbolToTerminalWiringListText(deviceText) {
+      if (!deviceText) return '';
+
+      const rows = getWiringRowsForDevice(deviceText);
+      const lines = rows
+        .map((row) => {
+          const lineL = getWiringCellText(row.cells[1]);
+          const symbol = getWiringCellText(row.cells[2]);
+          const lineR = getWiringCellText(row.cells[3]);
+          if (!lineL && !symbol && !lineR) return '';
+
+          return [
+            lineL.padEnd(10, ' '),
+            symbol.padEnd(18, ' '),
+            lineR,
+          ].join('').trimEnd();
+        })
+        .filter(Boolean);
+
+      return lines.join('\n');
+    }
+
+    function getWiringRowsForDevice(deviceText) {
+      const rows = [...wiringTable.querySelectorAll('tbody tr')];
+      const deviceRows = [];
+      let currentDeviceText = '';
+
+      rows.forEach((row) => {
+        const rowDeviceText = getWiringCellText(row.cells[0]);
+        if (rowDeviceText) currentDeviceText = rowDeviceText;
+        if (currentDeviceText === deviceText) deviceRows.push(row);
+      });
+
+      return deviceRows;
+    }
+
+    function getWiringCellText(cell) {
+      if (!cell) return '';
+
+      const input = cell.querySelector('input');
+      return (input ? input.value : cell.textContent).trim();
     }
 
     function findPartsTypeNameByDevice(deviceText) {
